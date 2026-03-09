@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>magnetGO</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <section class="panel panel-game">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">Prototype Puzzle</p>
+            <h1>magnetGO</h1>
+          </div>
+          <div class="head-actions">
+            <button id="resetButton" class="reset-button" type="button">Reset</button>
+            <button id="restoreButton" class="reset-button reset-button-secondary" type="button">Restore Base</button>
+          </div>
+        </div>
+        <div class="game-shell">
+          <canvas id="gameCanvas" width="1408" height="1408" aria-label="magnetGO game"></canvas>
+          <div id="playSideActions" class="play-side-actions" aria-hidden="true">
+            <button id="playResetButton" class="reset-button" type="button">Reset</button>
+          </div>
+        </div>
+      </section>
+      <aside class="panel panel-side">
+        <section>
+          <p class="eyebrow">Stage</p>
+          <h2 id="stageTitle"></h2>
+          <p id="stageGoal" class="goal-text"></p>
+        </section>
+        <section>
+          <p class="eyebrow">Select</p>
+          <div id="stageButtons" class="stage-buttons"></div>
+          <button id="nextStageButton" class="next-stage-button" type="button">Next Stage</button>
+        </section>
+        <section>
+          <p class="eyebrow">Mode</p>
+          <div class="mode-buttons">
+            <button id="editModeButton" class="mode-button" type="button">Edit</button>
+            <button id="playModeButton" class="mode-button" type="button">Play</button>
+          </div>
+        </section>
+        <section>
+          <p class="eyebrow">Palette</p>
+          <div id="paletteButtons" class="palette-buttons"></div>
+        </section>
+        <section>
+          <p class="eyebrow">Map Size</p>
+          <div class="size-controls">
+            <label class="size-field">
+              <span>Width</span>
+              <input id="mapWidthInput" type="number" min="6" max="40" value="20" />
+            </label>
+            <label class="size-field">
+              <span>Height</span>
+              <input id="mapHeightInput" type="number" min="6" max="40" value="20" />
+            </label>
+          </div>
+          <button id="applyMapSizeButton" class="next-stage-button" type="button">Apply Size</button>
+        </section>
+        <section>
+          <p class="eyebrow">Controls</p>
+          <ul class="controls">
+            <li><span>Move</span><strong>Arrow Keys / WASD</strong></li>
+            <li><span>Drop / Pick Head</span><strong>Space</strong></li>
+            <li><span>Attract</span><strong>Q</strong></li>
+            <li><span>Repel</span><strong>E</strong></li>
+            <li><span>Edit</span><strong>Click / Drag</strong></li>
+          </ul>
+        </section>
+        <section>
+          <p class="eyebrow">Status</p>
+          <div id="statusCard" class="status-card"></div>
+        </section>
+        <section>
+          <p class="eyebrow">Export</p>
+          <button id="exportButton" class="next-stage-button" type="button">Refresh Export</button>
+          <textarea id="exportOutput" class="export-output" spellcheck="false"></textarea>
+        </section>
+        <section>
+          <p class="eyebrow">Hint</p>
+          <p id="stageHint" class="hint-text"></p>
+        </section>
+      </aside>
+    </main>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
