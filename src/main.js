@@ -1366,27 +1366,43 @@ function drawShutterTile(grid, gridX, gridY, metrics) {
   const { x, y } = getTilePixel(gridX, gridY, metrics);
   const size = metrics.tileSize;
   const open = mode === "play" && isShutterPressed(group);
+  const connectsUp = grid[gridY - 1]?.[gridX] === tile;
+  const connectsDown = grid[gridY + 1]?.[gridX] === tile;
+  const frameY = y + (connectsUp ? 0 : size * 0.08);
+  const frameHeight = size - (connectsUp ? 0 : size * 0.08) - (connectsDown ? 0 : size * 0.08);
+  const panelY = y + (connectsUp ? 0 : size * 0.14);
+  const panelHeight = size - (connectsUp ? 0 : size * 0.14) - (connectsDown ? 0 : size * 0.14);
 
   ctx.fillStyle = group.accentDark;
-  ctx.fillRect(x + size * 0.08, y + size * 0.08, size * 0.84, size * 0.84);
+  ctx.fillRect(x + size * 0.08, frameY, size * 0.84, frameHeight);
 
   if (open) {
+    const openingY = y + (connectsUp ? 0 : size * 0.28);
+    const openingHeight = size - (connectsUp ? 0 : size * 0.28) - (connectsDown ? 0 : size * 0.08);
     ctx.fillStyle = "rgba(16, 15, 24, 0.74)";
-    ctx.fillRect(x + size * 0.16, y + size * 0.34, size * 0.68, size * 0.58);
-    ctx.fillStyle = group.accent;
-    ctx.fillRect(x + size * 0.16, y + size * 0.16, size * 0.68, size * 0.14);
+    ctx.fillRect(x + size * 0.16, openingY, size * 0.68, openingHeight);
+    if (!connectsUp) {
+      ctx.fillStyle = group.accent;
+      ctx.fillRect(x + size * 0.16, y + size * 0.16, size * 0.68, size * 0.14);
+    }
     for (let i = 0; i < 4; i += 1) {
       ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.22)" : "rgba(18,18,27,0.2)";
-      ctx.fillRect(x + size * 0.18, y + size * (0.18 + i * 0.025), size * 0.64, 2);
+      if (!connectsUp) {
+        ctx.fillRect(x + size * 0.18, y + size * 0.18 + size * (i * 0.025), size * 0.64, 2);
+      }
+    }
+    if (connectsDown) {
+      ctx.fillStyle = "rgba(16, 15, 24, 0.86)";
+      ctx.fillRect(x + size * 0.16, y + size * 0.92, size * 0.68, size * 0.08);
     }
     return;
   }
 
   ctx.fillStyle = group.accent;
-  ctx.fillRect(x + size * 0.16, y + size * 0.14, size * 0.68, size * 0.72);
+  ctx.fillRect(x + size * 0.16, panelY, size * 0.68, panelHeight);
   for (let i = 0; i < 6; i += 1) {
     ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.26)" : "rgba(18,18,27,0.18)";
-    ctx.fillRect(x + size * 0.18, y + size * (0.18 + i * 0.09), size * 0.64, 2);
+    ctx.fillRect(x + size * 0.18, panelY + size * 0.04 + i * size * 0.09, size * 0.64, 2);
   }
 }
 
@@ -1618,19 +1634,36 @@ function drawHeadRadius(metrics) {
   const { x, y } = getTilePixel(headPos.renderX, headPos.renderY, metrics);
   const centerX = x + metrics.tileSize / 2;
   const centerY = y + metrics.tileSize / 2;
+  const attractActive = mode === "play" && keys.attract;
+  const repelActive = mode === "play" && keys.repel;
+  const ringStroke = attractActive
+    ? "rgba(173, 233, 255, 0.6)"
+    : repelActive
+      ? "rgba(184, 146, 248, 0.72)"
+      : "rgba(187, 170, 235, 0.54)";
+  const ringFill = attractActive
+    ? "rgba(164, 229, 255, 0.12)"
+    : repelActive
+      ? "rgba(164, 122, 236, 0.16)"
+      : "rgba(167, 147, 221, 0.08)";
+  const crossStroke = attractActive
+    ? "rgba(216, 247, 255, 0.18)"
+    : repelActive
+      ? "rgba(241, 232, 255, 0.24)"
+      : "rgba(217, 208, 246, 0.12)";
   ctx.save();
   ctx.setLineDash([8, 8]);
-  ctx.strokeStyle = "rgba(187, 170, 235, 0.54)";
+  ctx.strokeStyle = ringStroke;
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.arc(centerX, centerY, metrics.tileSize * 2.6, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.fillStyle = "rgba(167, 147, 221, 0.08)";
+  ctx.fillStyle = ringFill;
   ctx.beginPath();
   ctx.arc(centerX, centerY, metrics.tileSize * 2.4, 0, Math.PI * 2);
   ctx.fill();
   ctx.setLineDash([]);
-  ctx.strokeStyle = "rgba(217, 208, 246, 0.12)";
+  ctx.strokeStyle = crossStroke;
   ctx.beginPath();
   ctx.moveTo(centerX - 10, centerY);
   ctx.lineTo(centerX + 10, centerY);
