@@ -10,6 +10,8 @@ const MAX_STAGE_SIZE = 40;
 const STAGE_STORAGE_VERSION = 2;
 const MAGNET_INTERVAL = 500;
 const GRAVITY_INTERVAL = 180;
+const JUMP_BUFFER_MS = 140;
+const COYOTE_TIME_MS = 120;
 
 const assetUrls = {
   robotHeadLeft: new URL("../assets/robot-head-left.PNG", import.meta.url).href,
@@ -20,7 +22,7 @@ const assetUrls = {
   boxLightAttached: new URL("../assets/box-light-attached.svg", import.meta.url).href,
   usb: new URL("../assets/usb.svg", import.meta.url).href,
   usbPlug: new URL("../assets/usb-plug.svg", import.meta.url).href,
-  goal: new URL("../assets/goal.svg", import.meta.url).href,
+  goal: new URL("../assets/Goal.PNG", import.meta.url).href,
   wallFill: new URL("../assets/wall-fill.svg", import.meta.url).href,
   wallEdgeTop: new URL("../assets/wall-edge-top.svg", import.meta.url).href,
   wallEdgeBottom: new URL("../assets/wall-edge-bottom.svg", import.meta.url).href,
@@ -42,15 +44,39 @@ const paletteItems = [
   { key: "P", label: "Player" },
   { key: "O", label: "Head" },
   { key: "B", label: "Box" },
+  { key: "H", label: "Heavy Box" },
   { key: "U", label: "USB" },
   { key: "G", label: "Goal" },
+  { key: "r", label: "Red Button" },
+  { key: "R", label: "Red Shutter" },
+  { key: "c", label: "Cyan Button" },
+  { key: "C", label: "Cyan Shutter" },
 ];
 
 const singletonTiles = new Set(["P", "O", "U", "G"]);
+const shutterGroups = {
+  red: {
+    button: "r",
+    shutter: "R",
+    accent: "#e07a86",
+    accentDark: "#8b4151",
+  },
+  cyan: {
+    button: "c",
+    shutter: "C",
+    accent: "#78d4e0",
+    accentDark: "#3d7f8a",
+  },
+};
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
+const appLayout = document.getElementById("appLayout");
+const clearOverlay = document.getElementById("clearOverlay");
+const overlayNextStageButton = document.getElementById("overlayNextStageButton");
+const gameOverOverlay = document.getElementById("gameOverOverlay");
+const overlayResetButton = document.getElementById("overlayResetButton");
 const playSideActions = document.getElementById("playSideActions");
 const playResetButton = document.getElementById("playResetButton");
 const stageTitle = document.getElementById("stageTitle");
@@ -85,12 +111,34 @@ let stageIndex = 0;
 let mode = "edit";
 let selectedPalette = "#";
 let isPainting = false;
-let editorStage = loadStoredStage(stageDefinitions[stageIndex]) ?? cloneStage(stageDefinitions[stageIndex]);
+let editorStage = resolveEditorStage(stageDefinitions[stageIndex]);
 let world = createWorld(editorStage);
 let lastMagnetTick = 0;
 let lastGravityTick = 0;
 let sceneTime = 0;
 let editorMessage = "Editモードです。左クリックで配置、ドラッグで連続配置。";
+let renderFailure = null;
+
+function formatErrorMessage(error) {
+  if (!error) {
+    return "Unknown error";
+  }
+  if (typeof error === "string") {
+    return error;
+  }
+  return error.message ?? String(error);
+}
+
+function reportRenderFailure(error) {
+  const message = formatErrorMessage(error);
+  renderFailure = message;
+  world.message = `描画エラー: ${message}`;
+  console.error(error);
+}
+
+function clearRenderFailure() {
+  renderFailure = null;
+}
 
 function withRenderPosition(entity) {
   return {
@@ -255,17 +303,27 @@ function normalizeGrid(grid, targetWidth = DEFAULT_STAGE_COLUMNS, targetHeight =
 function loadStage(index) {
   stageIndex = index;
   const baseStage = stageDefinitions[index];
-  const storedStage = loadStoredStage(baseStage);
-  editorStage = storedStage ?? cloneStage(baseStage);
+  editorStage = resolveEditorStage(baseStage);
   resizeCanvasForGrid(editorStage.grid);
   resetWorld();
   setMode("edit");
-  editorMessage = storedStage
-    ? `${editorStage.title} の保存済み編集を読み込みました。`
-    : `${editorStage.title} を読み込みました。`;
+  editorMessage = `${editorStage.title} を読み込みました。`;
   renderStageButtons();
   syncMapSizeControls();
   refreshExport();
+}
+
+function resolveEditorStage(baseStage) {
+  const storedStage = loadStoredStage(baseStage);
+  const baseClone = cloneStage(baseStage);
+  if (!storedStage) {
+    return baseClone;
+  }
+  if (validateStage(storedStage).length > 0 && validateStage(baseClone).length === 0) {
+    window.localStorage.removeItem(getStageStorageKey(baseStage.id));
+    return baseClone;
+  }
+  return storedStage;
 }
 
 function createWorld(stage) {
@@ -278,13 +336,26 @@ function createWorld(stage) {
   stage.grid.forEach((row, y) => {
     row.split("").forEach((cell, x) => {
       if (cell === "P") {
-        player = withRenderPosition({ x, y, hasHead: true, magneticBody: false, carryingUsb: false, facing: "left", jumpVisual: 0 });
+        player = withRenderPosition({
+          x,
+          y,
+          hasHead: true,
+          magneticBody: false,
+          carryingUsb: false,
+          facing: "left",
+          jumpVisual: 0,
+          lastGroundedAt: 0,
+          jumpQueuedUntil: 0,
+        });
       }
       if (cell === "O") {
         head = withRenderPosition({ x, y, attached: false, hasUsb: false, facing: "left" });
       }
       if (cell === "B") {
         boxes.push(withRenderPosition({ x, y, type: "light", attached: false }));
+      }
+      if (cell === "H") {
+        boxes.push(withRenderPosition({ x, y, type: "heavy", attached: false }));
       }
       if (cell === "U") {
         usb = { x, y, collected: false };
@@ -296,7 +367,17 @@ function createWorld(stage) {
   });
 
   if (!player) {
-    player = withRenderPosition({ x: 1, y: 1, hasHead: true, magneticBody: false, carryingUsb: false, facing: "left", jumpVisual: 0 });
+    player = withRenderPosition({
+      x: 1,
+      y: 1,
+      hasHead: true,
+      magneticBody: false,
+      carryingUsb: false,
+      facing: "left",
+      jumpVisual: 0,
+      lastGroundedAt: 0,
+      jumpQueuedUntil: 0,
+    });
   }
 
   const resolvedHead = head ?? withRenderPosition({ x: player.x, y: player.y, attached: true, hasUsb: false, facing: player.facing });
@@ -311,6 +392,7 @@ function createWorld(stage) {
     usb,
     goal,
     cleared: false,
+    gameOver: false,
     message: "頭を使って箱をどかそう。",
   };
 }
@@ -343,15 +425,21 @@ function resetWorld() {
   syncRenderPositions();
   lastMagnetTick = 0;
   lastGravityTick = 0;
+  clearRenderFailure();
 }
 
 function setMode(nextMode) {
   mode = nextMode;
+  appLayout.classList.toggle("is-edit", mode === "edit");
   editModeButton.classList.toggle("is-active", mode === "edit");
   playModeButton.classList.toggle("is-active", mode === "play");
   playSideActions.classList.toggle("is-visible", mode === "play");
   playSideActions.setAttribute("aria-hidden", mode === "play" ? "false" : "true");
-  nextStageButton.disabled = mode !== "play" || !world.cleared || stageIndex >= stageDefinitions.length - 1;
+  clearOverlay.classList.toggle("is-visible", mode === "play" && world.cleared);
+  clearOverlay.setAttribute("aria-hidden", mode === "play" && world.cleared ? "false" : "true");
+  gameOverOverlay.classList.toggle("is-visible", mode === "play" && world.gameOver);
+  gameOverOverlay.setAttribute("aria-hidden", mode === "play" && world.gameOver ? "false" : "true");
+  nextStageButton.disabled = mode !== "play" || !world.cleared || world.gameOver || stageIndex >= stageDefinitions.length - 1;
 }
 
 function renderStageButtons() {
@@ -379,6 +467,70 @@ function renderPaletteButtons() {
     });
     paletteButtons.appendChild(button);
   });
+}
+
+function getShutterGroupByTile(tile) {
+  return Object.values(shutterGroups).find((group) => group.button === tile || group.shutter === tile) ?? null;
+}
+
+function isButtonTile(tile) {
+  return Object.values(shutterGroups).some((group) => group.button === tile);
+}
+
+function isShutterTile(tile) {
+  return Object.values(shutterGroups).some((group) => group.shutter === tile);
+}
+
+function isShutterPressed(group) {
+  return (
+    world.stage.grid.some((row, y) =>
+      row.split("").some((cell, x) => {
+        if (cell !== group.button) {
+          return false;
+        }
+        return (
+          world.player.x === x && world.player.y === y ||
+          world.boxes.some((box) => box.x === x && box.y === y) ||
+          (!world.player.hasHead && world.head.x === x && world.head.y === y)
+        );
+      })
+    )
+  );
+}
+
+function isShutterOpenAt(x, y) {
+  const tile = getTile(x, y);
+  const group = getShutterGroupByTile(tile);
+  if (!group || tile !== group.shutter || mode !== "play") {
+    return false;
+  }
+  return isShutterPressed(group);
+}
+
+function triggerGameOver(message = "シャッターに挟まれた。") {
+  world.gameOver = true;
+  world.message = message;
+}
+
+function checkShutterCrush() {
+  if (mode !== "play" || world.cleared || world.gameOver) {
+    return;
+  }
+
+  for (let y = 0; y < world.stage.grid.length; y += 1) {
+    for (let x = 0; x < world.stage.grid[y].length; x += 1) {
+      const tile = world.stage.grid[y][x];
+      if (!isShutterTile(tile) || isShutterOpenAt(x, y)) {
+        continue;
+      }
+      const playerCaught = world.player.x === x && world.player.y === y;
+      const headCaught = !world.player.hasHead && world.head.x === x && world.head.y === y;
+      if (playerCaught || headCaught) {
+        triggerGameOver();
+        return;
+      }
+    }
+  }
 }
 
 function syncMapSizeControls() {
@@ -428,11 +580,24 @@ function getTile(x, y) {
 
 function isSolidTile(x, y) {
   const tile = getTile(x, y);
-  return tile === "#";
+  return tile === "#" || (isShutterTile(tile) && !isShutterOpenAt(x, y));
 }
 
 function getBoxAt(x, y) {
   return world.boxes.find((box) => box.x === x && box.y === y);
+}
+
+function canDetachedHeadMoveTo(x, y) {
+  if (isSolidTile(x, y)) {
+    return false;
+  }
+  if (world.boxes.some((box) => box.x === x && box.y === y)) {
+    return false;
+  }
+  if (world.player.x === x && world.player.y === y) {
+    return false;
+  }
+  return true;
 }
 
 function hasMetalBoxAt(x, y) {
@@ -468,6 +633,8 @@ function syncRenderPositions() {
   world.player.renderX = world.player.x;
   world.player.renderY = world.player.y;
   world.player.jumpVisual = 0;
+  world.player.lastGroundedAt = 0;
+  world.player.jumpQueuedUntil = 0;
   world.head.renderX = world.head.x;
   world.head.renderY = world.head.y;
   world.boxes.forEach((box) => {
@@ -527,19 +694,28 @@ function isOccupied(x, y, ignoreBox = null) {
 }
 
 function tryMovePlayer(dx, dy) {
-  if (world.cleared || mode !== "play") {
+  if (world.cleared || world.gameOver || mode !== "play") {
     return;
   }
 
   const targetX = world.player.x + dx;
   const targetY = world.player.y + dy;
 
+  const targetBox = getBoxAt(targetX, targetY);
+  if (isSolidTile(targetX, targetY) || targetBox) {
+    if (tryStepUp(dx, dy, targetBox)) {
+      return;
+    }
+  }
+
   if (isSolidTile(targetX, targetY)) {
     return;
   }
 
-  const targetBox = getBoxAt(targetX, targetY);
   if (targetBox) {
+    if (targetBox.type === "heavy") {
+      return;
+    }
     const pushX = targetBox.x + dx;
     const pushY = targetBox.y + dy;
     if (isOccupied(pushX, pushY, targetBox)) {
@@ -561,13 +737,52 @@ function tryMovePlayer(dx, dy) {
   collectUsbIfPossible();
   tryInsertUsb();
   checkClear();
+  checkShutterCrush();
 }
 
-function tryJumpPlayer() {
-  if (world.cleared || mode !== "play") {
+function tryStepUp(dx, dy, blockingBox = null) {
+  if (dy !== 0 || !isGrounded(world.player)) {
+    return false;
+  }
+
+  const targetX = world.player.x + dx;
+  const climbY = world.player.y - 1;
+  if (climbY < 0) {
+    return false;
+  }
+
+  if (isSolidTile(world.player.x, climbY) || hasDetachedHeadAt(world.player.x, climbY) || getBoxAt(world.player.x, climbY)) {
+    return false;
+  }
+  if (isSolidTile(targetX, climbY) || hasDetachedHeadAt(targetX, climbY)) {
+    return false;
+  }
+
+  const boxAbove = getBoxAt(targetX, climbY);
+  if (boxAbove || (blockingBox && blockingBox.type === "heavy")) {
+    return false;
+  }
+
+  world.player.x = targetX;
+  world.player.y = climbY;
+  world.player.jumpVisual = 0.32;
+  world.player.lastGroundedAt = 0;
+  collectUsbIfPossible();
+  tryInsertUsb();
+  checkClear();
+  checkShutterCrush();
+  return true;
+}
+
+function canPlayerJump(timestamp) {
+  return isGrounded(world.player) || timestamp <= world.player.lastGroundedAt + COYOTE_TIME_MS;
+}
+
+function tryJumpPlayer(timestamp) {
+  if (world.cleared || world.gameOver || mode !== "play") {
     return;
   }
-  if (!isGrounded(world.player)) {
+  if (!canPlayerJump(timestamp)) {
     return;
   }
 
@@ -582,18 +797,24 @@ function tryJumpPlayer() {
       }
       world.player.y = normalTargetY;
       world.player.jumpVisual = 0.5;
+      world.player.lastGroundedAt = 0;
+      world.player.jumpQueuedUntil = 0;
       collectUsbIfPossible();
       tryInsertUsb();
       checkClear();
+      checkShutterCrush();
     }
     return;
   }
 
   world.player.y -= targetHeight;
   world.player.jumpVisual = boosted ? 1 : 0.5;
+  world.player.lastGroundedAt = 0;
+  world.player.jumpQueuedUntil = 0;
   collectUsbIfPossible();
   tryInsertUsb();
   checkClear();
+  checkShutterCrush();
 }
 
 function collectUsbIfPossible() {
@@ -633,7 +854,7 @@ function checkClear() {
 }
 
 function toggleHead() {
-  if (world.cleared || mode !== "play") {
+  if (world.cleared || world.gameOver || mode !== "play") {
     return;
   }
 
@@ -644,6 +865,7 @@ function toggleHead() {
     world.head.y = world.player.y;
     world.head.facing = world.player.facing;
     world.message = "頭を置いた。";
+    checkShutterCrush();
     return;
   }
 
@@ -653,6 +875,7 @@ function toggleHead() {
     world.head.attached = true;
     world.head.facing = world.player.facing;
     world.message = "頭を装着した。";
+    checkShutterCrush();
     return;
   }
 
@@ -660,12 +883,23 @@ function toggleHead() {
 }
 
 function applyMagnet(modeName) {
-  if (world.cleared || mode !== "play") {
+  if (world.cleared || world.gameOver || mode !== "play") {
     return;
   }
 
   const headPos = getHeadPosition();
   let movedSomething = false;
+  let movedPlayerByHeavyBox = false;
+  const nearestHeavyBox = world.boxes
+    .filter((box) => box.type === "heavy")
+    .map((box) => ({
+      box,
+      dx: headPos.x - box.x,
+      dy: headPos.y - box.y,
+      distance: Math.abs(headPos.x - box.x) + Math.abs(headPos.y - box.y),
+    }))
+    .filter(({ distance }) => distance > 0 && distance <= 3)
+    .sort((a, b) => a.distance - b.distance)[0]?.box ?? null;
 
   world.boxes.forEach((box) => {
     const dx = headPos.x - box.x;
@@ -674,6 +908,37 @@ function applyMagnet(modeName) {
 
     if (distance === 0 || distance > 3) {
       box.attached = false;
+      return;
+    }
+
+    if (box.type === "heavy") {
+      box.attached = false;
+      if (box !== nearestHeavyBox) {
+        return;
+      }
+      const step = getMagnetStep(dx, dy, modeName);
+      if (!step) {
+        return;
+      }
+      const robotStep = modeName === "attract" ? { dx: -step.dx, dy: -step.dy } : { dx: step.dx, dy: step.dy };
+      const magnetEntity = world.player.hasHead ? world.player : world.head;
+      const targetX = magnetEntity.x + robotStep.dx;
+      const targetY = magnetEntity.y + robotStep.dy;
+      const canMove =
+        magnetEntity === world.player
+          ? !isOccupied(targetX, targetY)
+          : canDetachedHeadMoveTo(targetX, targetY);
+      if (canMove) {
+        magnetEntity.x = targetX;
+        magnetEntity.y = targetY;
+        movedPlayerByHeavyBox = magnetEntity === world.player;
+        movedSomething = true;
+        if (magnetEntity === world.player) {
+          collectUsbIfPossible();
+          tryInsertUsb();
+          checkClear();
+        }
+      }
       return;
     }
 
@@ -700,30 +965,41 @@ function applyMagnet(modeName) {
     movedSomething = true;
   });
 
-  if (world.player.magneticBody && !world.player.hasHead) {
-    const headDx = world.head.x - world.player.x;
-    const headDy = world.head.y - world.player.y;
-    const distance = Math.abs(headDx) + Math.abs(headDy);
-    if (distance > 0 && distance <= 3) {
-      const step = getMagnetStep(headDx, headDy, modeName);
+  if (!world.player.hasHead) {
+    const nearestMetal = world.boxes
+      .map((box) => ({
+        box,
+        dx: box.x - world.head.x,
+        dy: box.y - world.head.y,
+        distance: Math.abs(box.x - world.head.x) + Math.abs(box.y - world.head.y),
+      }))
+      .filter(({ distance }) => distance > 0 && distance <= 3)
+      .sort((a, b) => a.distance - b.distance)[0];
+
+    if (nearestMetal) {
+      const step = getMagnetStep(nearestMetal.dx, nearestMetal.dy, modeName);
       if (step) {
-        const targetX = world.player.x + step.dx;
-        const targetY = world.player.y + step.dy;
-        if (!isOccupied(targetX, targetY)) {
-          world.player.x = targetX;
-          world.player.y = targetY;
+        const targetX = world.head.x + step.dx;
+        const targetY = world.head.y + step.dy;
+        if (canDetachedHeadMoveTo(targetX, targetY)) {
+          world.head.x = targetX;
+          world.head.y = targetY;
           movedSomething = true;
-          collectUsbIfPossible();
-          tryInsertUsb();
-          checkClear();
         }
       }
     }
   }
 
   if (movedSomething) {
-    world.message = modeName === "attract" ? "引力を発生させた。" : "斥力を発生させた。";
+    world.message = movedPlayerByHeavyBox
+      ? modeName === "attract"
+        ? "重い鉄箱に引かれてロボが動いた。"
+        : "重い鉄箱を押してロボが動いた。"
+      : modeName === "attract"
+        ? "引力を発生させた。"
+        : "斥力を発生させた。";
   }
+  checkShutterCrush();
 }
 
 function applyGravity() {
@@ -754,6 +1030,7 @@ function applyGravity() {
     collectUsbIfPossible();
     tryInsertUsb();
     checkClear();
+    checkShutterCrush();
   }
 }
 
@@ -784,18 +1061,22 @@ function queueMove(key) {
 }
 
 function processInput() {
-  if (mode !== "play") {
+  if (mode !== "play" || world.gameOver) {
     moveQueue.length = 0;
     return;
   }
 
   const next = moveQueue.shift();
   if (!next) {
+    if (world.player.jumpQueuedUntil > 0 && sceneTime <= world.player.jumpQueuedUntil && canPlayerJump(sceneTime)) {
+      tryJumpPlayer(sceneTime);
+    }
     return;
   }
 
   if (next === "up") {
-    tryJumpPlayer();
+    world.player.jumpQueuedUntil = sceneTime + JUMP_BUFFER_MS;
+    tryJumpPlayer(sceneTime);
   }
   if (next === "down") {
     tryMovePlayer(0, 1);
@@ -817,7 +1098,19 @@ function processInput() {
 }
 
 function update(timestamp) {
+  if (renderFailure) {
+    drawErrorState();
+    requestAnimationFrame(update);
+    return;
+  }
+
   sceneTime = timestamp;
+  if (isGrounded(world.player)) {
+    world.player.lastGroundedAt = timestamp;
+  }
+  if (world.player.jumpQueuedUntil > 0 && timestamp > world.player.jumpQueuedUntil) {
+    world.player.jumpQueuedUntil = 0;
+  }
   processInput();
 
   if (mode === "play" && timestamp - lastGravityTick >= GRAVITY_INTERVAL) {
@@ -835,8 +1128,13 @@ function update(timestamp) {
     lastMagnetTick = timestamp;
   }
 
-  updateRenderPositions();
-  draw();
+  try {
+    updateRenderPositions();
+    draw();
+  } catch (error) {
+    reportRenderFailure(error);
+    drawErrorState();
+  }
   requestAnimationFrame(update);
 }
 
@@ -850,6 +1148,29 @@ function draw() {
   updateHud();
 }
 
+function drawErrorState() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#1b1928");
+  gradient.addColorStop(1, "#13111d");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  fillRoundedRect(canvas.width / 2 - 220, canvas.height / 2 - 92, 440, 184, 14, "rgba(47, 43, 68, 0.96)");
+  strokeRoundedRect(canvas.width / 2 - 220, canvas.height / 2 - 92, 440, 184, 14, "rgba(214, 202, 244, 0.16)", 2);
+
+  ctx.fillStyle = "#f0eaff";
+  ctx.font = 'bold 28px "Iosevka", "IBM Plex Mono", monospace';
+  ctx.textAlign = "center";
+  ctx.fillText("Render Error", canvas.width / 2, canvas.height / 2 - 26);
+  ctx.font = '14px "Iosevka", "IBM Plex Mono", monospace';
+  ctx.fillStyle = "rgba(233, 226, 247, 0.84)";
+  ctx.fillText(renderFailure ?? "Unknown error", canvas.width / 2, canvas.height / 2 + 8);
+  ctx.fillText("Reset か Restore Base を試してください。", canvas.width / 2, canvas.height / 2 + 36);
+  ctx.textAlign = "start";
+  updateHud();
+}
+
 function drawPlayWorld() {
   const metrics = getBoardMetrics(world.stage.grid);
   drawSceneBackdrop(metrics);
@@ -860,7 +1181,7 @@ function drawPlayWorld() {
   if (world.usb && !world.usb.collected) {
     drawUsbAt(world.usb.x, world.usb.y, metrics);
   }
-  world.boxes.forEach((box) => drawBoxAt(box.renderX, box.renderY, box.attached, metrics));
+  world.boxes.forEach((box) => drawBoxAt(box.renderX, box.renderY, box.attached, metrics, box.type));
   drawHeadRadius(metrics);
   drawPlayerAt(world.player.renderX, world.player.renderY, world.player.hasHead, world.player.magneticBody, world.head.hasUsb, metrics);
   if (!world.player.hasHead) {
@@ -881,7 +1202,10 @@ function drawEditor() {
         drawHeadAtGrid(x, y, true, false, metrics);
       }
       if (cell === "B") {
-        drawBoxAt(x, y, false, metrics);
+        drawBoxAt(x, y, false, metrics, "light");
+      }
+      if (cell === "H") {
+        drawBoxAt(x, y, false, metrics, "heavy");
       }
       if (cell === "U") {
         drawUsbAt(x, y, metrics);
@@ -1019,6 +1343,53 @@ function drawFloorTile(gridX, gridY, metrics) {
   }
 }
 
+function drawButtonTile(gridX, gridY, group, metrics) {
+  drawFloorTile(gridX, gridY, metrics);
+  const { x, y } = getTilePixel(gridX, gridY, metrics);
+  const tile = metrics.tileSize;
+  const pressed = mode === "play" ? isShutterPressed(group) : false;
+
+  fillRoundedRect(x + tile * 0.18, y + tile * 0.58, tile * 0.64, tile * 0.16, 5, group.accentDark);
+  fillRoundedRect(x + tile * 0.22, y + tile * (pressed ? 0.6 : 0.5), tile * 0.56, tile * 0.14, 5, group.accent);
+  fillRoundedRect(x + tile * 0.28, y + tile * (pressed ? 0.62 : 0.52), tile * 0.44, tile * 0.05, 3, "rgba(255,255,255,0.26)");
+}
+
+function drawShutterTile(grid, gridX, gridY, metrics) {
+  const tile = grid[gridY][gridX];
+  const group = getShutterGroupByTile(tile);
+  if (!group) {
+    drawFloorTile(gridX, gridY, metrics);
+    return;
+  }
+
+  drawFloorTile(gridX, gridY, metrics);
+  const { x, y } = getTilePixel(gridX, gridY, metrics);
+  const size = metrics.tileSize;
+  const open = mode === "play" && isShutterPressed(group);
+
+  ctx.fillStyle = group.accentDark;
+  ctx.fillRect(x + size * 0.08, y + size * 0.08, size * 0.84, size * 0.84);
+
+  if (open) {
+    ctx.fillStyle = "rgba(16, 15, 24, 0.74)";
+    ctx.fillRect(x + size * 0.16, y + size * 0.34, size * 0.68, size * 0.58);
+    ctx.fillStyle = group.accent;
+    ctx.fillRect(x + size * 0.16, y + size * 0.16, size * 0.68, size * 0.14);
+    for (let i = 0; i < 4; i += 1) {
+      ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.22)" : "rgba(18,18,27,0.2)";
+      ctx.fillRect(x + size * 0.18, y + size * (0.18 + i * 0.025), size * 0.64, 2);
+    }
+    return;
+  }
+
+  ctx.fillStyle = group.accent;
+  ctx.fillRect(x + size * 0.16, y + size * 0.14, size * 0.68, size * 0.72);
+  for (let i = 0; i < 6; i += 1) {
+    ctx.fillStyle = i % 2 === 0 ? "rgba(255,255,255,0.26)" : "rgba(18,18,27,0.18)";
+    ctx.fillRect(x + size * 0.18, y + size * (0.18 + i * 0.09), size * 0.64, 2);
+  }
+}
+
 function drawSceneBackdrop(metrics) {
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
   gradient.addColorStop(0, "#1c1a2a");
@@ -1071,6 +1442,10 @@ function drawBoardFromGrid(grid, metrics) {
       const tile = grid[y][x];
       if (tile === "#") {
         drawWallTile(grid, x, y, metrics);
+      } else if (isButtonTile(tile)) {
+        drawButtonTile(x, y, getShutterGroupByTile(tile), metrics);
+      } else if (isShutterTile(tile)) {
+        drawShutterTile(grid, x, y, metrics);
       } else {
         drawFloorTile(x, y, metrics);
       }
@@ -1166,8 +1541,6 @@ function drawGoalAt(gridX, gridY, metrics) {
   const { x, y } = getTilePixel(gridX, gridY, metrics);
   const tile = metrics.tileSize;
   const pulse = 0.7 + (Math.sin(sceneTime / 240) + 1) * 0.15;
-  const doorWidth = tile * 1.08;
-  const doorX = x - (doorWidth - tile) / 2;
 
   ctx.save();
   ctx.globalAlpha = 0.12 * pulse;
@@ -1177,14 +1550,14 @@ function drawGoalAt(gridX, gridY, metrics) {
   ctx.fill();
   ctx.restore();
 
-  if (drawAsset("goal", doorX, y - tile, doorWidth, tile * 2)) {
+  if (drawAsset("goal", x, y, tile, tile)) {
     return;
   }
-  fillRoundedRect(x + tile * 0.22, y - tile * 0.7, tile * 0.56, tile * 0.24, 8, "#7d729e");
-  fillRoundedRect(x + tile * 0.46, y - tile * 0.45, tile * 0.08, tile * 0.54, 4, "#7e7694");
-  fillRoundedRect(x + tile * 0.14, y + tile * 0.28, tile * 0.72, tile * 0.4, 10, "#9085b4");
-  fillRoundedRect(x + tile * 0.22, y + tile * 0.36, tile * 0.56, tile * 0.22, 8, "#231f36");
-  fillRoundedRect(x + tile * 0.28, y + tile * 0.63, tile * 0.44, tile * 0.1, 4, "#cdbf94");
+  fillRoundedRect(x + tile * 0.18, y + tile * 0.16, tile * 0.64, tile * 0.2, 8, "#7d729e");
+  fillRoundedRect(x + tile * 0.44, y + tile * 0.28, tile * 0.12, tile * 0.18, 4, "#7e7694");
+  fillRoundedRect(x + tile * 0.14, y + tile * 0.34, tile * 0.72, tile * 0.42, 10, "#9085b4");
+  fillRoundedRect(x + tile * 0.22, y + tile * 0.42, tile * 0.56, tile * 0.24, 8, "#231f36");
+  fillRoundedRect(x + tile * 0.28, y + tile * 0.7, tile * 0.44, tile * 0.08, 4, "#cdbf94");
 }
 
 function drawUsbAt(gridX, gridY, metrics) {
@@ -1202,10 +1575,10 @@ function drawUsbAt(gridX, gridY, metrics) {
   fillRoundedRect(x + tile * 0.375, y - tile * 0.078125, Math.max(2, tile * 0.09375), Math.max(3, tile * 0.140625), 2, "#f8fbf8");
 }
 
-function drawBoxAt(gridX, gridY, attached, metrics) {
+function drawBoxAt(gridX, gridY, attached, metrics, type = "light") {
   const { x: cellX, y: cellY } = getTilePixel(gridX, gridY, metrics);
   const tile = metrics.tileSize;
-  if (drawAsset(attached ? "boxLightAttached" : "boxLight", cellX, cellY, tile, tile)) {
+  if (type === "light" && drawAsset(attached ? "boxLightAttached" : "boxLight", cellX, cellY, tile, tile)) {
     return;
   }
   const x = cellX + tile * 0.15625;
@@ -1214,17 +1587,30 @@ function drawBoxAt(gridX, gridY, attached, metrics) {
   ctx.beginPath();
   ctx.ellipse(cellX + tile / 2, cellY + tile * 0.875, tile * 0.28125, tile * 0.109375, 0, 0, Math.PI * 2);
   ctx.fill();
-  fillRoundedRect(x, y, tile * 0.6875, tile * 0.71875, 16, attached ? "#a7b7ff" : "#99acb7");
-  strokeRoundedRect(x, y, tile * 0.6875, tile * 0.71875, 16, "#58646f", 2.5);
-  fillRoundedRect(x + tile * 0.125, y + tile * 0.125, tile * 0.4375, tile * 0.4375, 12, "rgba(255, 255, 255, 0.24)");
+  const boxColor = type === "heavy" ? "#6d657f" : attached ? "#a7b7ff" : "#99acb7";
+  const frameColor = type === "heavy" ? "#3d3749" : "#58646f";
+  fillRoundedRect(x, y, tile * 0.6875, tile * 0.71875, 16, boxColor);
+  strokeRoundedRect(x, y, tile * 0.6875, tile * 0.71875, 16, frameColor, 2.5);
+  fillRoundedRect(
+    x + tile * 0.125,
+    y + tile * 0.125,
+    tile * 0.4375,
+    tile * 0.4375,
+    12,
+    type === "heavy" ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.24)"
+  );
   ctx.beginPath();
-  ctx.strokeStyle = "rgba(80, 92, 98, 0.6)";
+  ctx.strokeStyle = type === "heavy" ? "rgba(229, 221, 255, 0.18)" : "rgba(80, 92, 98, 0.6)";
   ctx.lineWidth = 2;
   ctx.moveTo(x + tile * 0.21875, y + tile * 0.1875);
   ctx.lineTo(x + tile * 0.46875, y + tile * 0.5);
   ctx.moveTo(x + tile * 0.46875, y + tile * 0.1875);
   ctx.lineTo(x + tile * 0.21875, y + tile * 0.5);
   ctx.stroke();
+  if (type === "heavy") {
+    fillRoundedRect(x + tile * 0.24, y + tile * 0.28, tile * 0.12, tile * 0.16, 3, "#2a2534");
+    fillRoundedRect(x + tile * 0.42, y + tile * 0.28, tile * 0.12, tile * 0.16, 3, "#2a2534");
+  }
 }
 
 function drawHeadRadius(metrics) {
@@ -1371,7 +1757,12 @@ function updateHud() {
     mode === "edit"
       ? "Editモード: パレットを選んでキャンバス上に配置。Playでそのままテストできます。"
       : editorStage.hint;
-  nextStageButton.disabled = mode !== "play" || !world.cleared || stageIndex >= stageDefinitions.length - 1;
+  nextStageButton.disabled = mode !== "play" || !world.cleared || world.gameOver || stageIndex >= stageDefinitions.length - 1;
+  overlayNextStageButton.hidden = stageIndex >= stageDefinitions.length - 1;
+  clearOverlay.classList.toggle("is-visible", mode === "play" && world.cleared);
+  clearOverlay.setAttribute("aria-hidden", mode === "play" && world.cleared ? "false" : "true");
+  gameOverOverlay.classList.toggle("is-visible", mode === "play" && world.gameOver);
+  gameOverOverlay.setAttribute("aria-hidden", mode === "play" && world.gameOver ? "false" : "true");
 
   if (mode === "edit") {
     const problems = validateStage(editorStage);
@@ -1391,7 +1782,8 @@ function updateHud() {
     `<p>Mode: Play</p>`,
     `<p>頭: ${headState}</p>`,
     `<p>USB: ${usbState}</p>`,
-    `<p>${world.message}</p>`,
+    `<p>State: ${world.gameOver ? "Game Over" : world.cleared ? "Clear" : "Playing"}</p>`,
+    `<p>${renderFailure ? `Render Error: ${renderFailure}` : world.message}</p>`,
   ].join("");
 }
 
@@ -1562,10 +1954,20 @@ playResetButton.addEventListener("click", () => {
   resetWorld();
 });
 
+overlayResetButton.addEventListener("click", () => {
+  resetWorld();
+});
+
 restoreButton.addEventListener("click", restoreBaseStage);
 applyMapSizeButton.addEventListener("click", applyMapSize);
 
 nextStageButton.addEventListener("click", () => {
+  if (stageIndex < stageDefinitions.length - 1) {
+    loadStage(stageIndex + 1);
+  }
+});
+
+overlayNextStageButton.addEventListener("click", () => {
   if (stageIndex < stageDefinitions.length - 1) {
     loadStage(stageIndex + 1);
   }
@@ -1602,8 +2004,20 @@ syncMapSizeControls();
 resizeCanvasForGrid(editorStage.grid);
 refreshExport();
 setMode("edit");
-draw();
+try {
+  draw();
+} catch (error) {
+  reportRenderFailure(error);
+  drawErrorState();
+}
 requestAnimationFrame(update);
+
+window.addEventListener("error", (event) => {
+  if (!renderFailure) {
+    reportRenderFailure(event.error ?? event.message);
+    drawErrorState();
+  }
+});
 
 window.addEventListener("resize", () => {
   resizeCanvasForGrid(editorStage.grid);

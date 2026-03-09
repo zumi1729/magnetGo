@@ -57,6 +57,12 @@
 - 引力 / 斥力で 1 回につき 1 マス動く
 - 頭の隣接マスまで来た箱は、引力中は吸着状態になる
 
+### 重い鉄箱
+
+- `Heavy Box` として配置可能
+- 箱自体は動かない
+- 足場や頭の近くで磁力を使うと、箱ではなくロボ側が動く
+
 ### 重力
 
 - プレイヤー
@@ -138,6 +144,10 @@ python3 -m http.server 8000
 - `Box`
 - `USB`
 - `Goal`
+- `Red Button`
+- `Red Shutter`
+- `Cyan Button`
+- `Cyan Shutter`
 
 ### 制約
 
@@ -208,6 +218,9 @@ python3 -m http.server 8000
 
 - [stages/stage-1.js](/root/magnetGO/stages/stage-1.js)
 - [stages/stage-2.js](/root/magnetGO/stages/stage-2.js)
+- [stages/stage-3.js](/root/magnetGO/stages/stage-3.js)
+- [stages/stage-4.js](/root/magnetGO/stages/stage-4.js)
+- [stages/stage-5.js](/root/magnetGO/stages/stage-5.js)
 
 各ステージファイルでは、`width` と `height` を明示し、そのサイズに合わせて `grid` を記述します。
 
@@ -271,4 +284,6 @@ python3 -m http.server 8000
 1. ブラウザで `Edit` しながら面を作る
 2. `Play` で触って調整する
 3. 良くなったら `Refresh Export` の内容をステージファイルへ反映する
+
+`stage-3` 以降には、編集の叩き台として使えるプレイ可能な空ステージも入っています。
 4. 必要なら `Restore Base` でブラウザ保存との差分を消す

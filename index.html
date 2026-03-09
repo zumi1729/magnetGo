@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="layout">
+    <main id="appLayout" class="layout">
       <section class="panel panel-game">
         <div class="panel-head">
           <div>
@@ -20,7 +20,23 @@
           </div>
         </div>
         <div class="game-shell">
-          <canvas id="gameCanvas" width="1408" height="1408" aria-label="magnetGO game"></canvas>
+          <div class="game-canvas-wrap">
+            <canvas id="gameCanvas" width="1408" height="1408" aria-label="magnetGO game"></canvas>
+            <div id="clearOverlay" class="clear-overlay" aria-hidden="true">
+              <div class="clear-card">
+                <p class="eyebrow">Stage Complete</p>
+                <h2>Clear</h2>
+                <button id="overlayNextStageButton" class="next-stage-button" type="button">Next Stage</button>
+              </div>
+            </div>
+            <div id="gameOverOverlay" class="clear-overlay" aria-hidden="true">
+              <div class="clear-card">
+                <p class="eyebrow">System Halt</p>
+                <h2>Game Over</h2>
+                <button id="overlayResetButton" class="reset-button" type="button">Reset</button>
+              </div>
+            </div>
+          </div>
           <div id="playSideActions" class="play-side-actions" aria-hidden="true">
             <button id="playResetButton" class="reset-button" type="button">Reset</button>
           </div>
