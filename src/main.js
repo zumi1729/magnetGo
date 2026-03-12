@@ -1,100 +1,61 @@
 import { stageDefinitions } from "../stages/index.js";
-
-const TILE = 64;
-const MIN_TILE = 18;
-const DISPLAY_TILE = 96;
-const DEFAULT_STAGE_COLUMNS = 20;
-const DEFAULT_STAGE_ROWS = 20;
-const MIN_STAGE_SIZE = 6;
-const MAX_STAGE_SIZE = 40;
-const STAGE_STORAGE_VERSION = 2;
-const MAGNET_INTERVAL = 500;
-const GRAVITY_INTERVAL = 180;
-const JUMP_BUFFER_MS = 140;
-const COYOTE_TIME_MS = 120;
-
-const assetUrls = {
-  robotHeadLeft: new URL("../assets/robot-head-left.PNG", import.meta.url).href,
-  robotHeadRight: new URL("../assets/robot-head-right.PNG", import.meta.url).href,
-  robotBody: new URL("../assets/robot-body-left.png", import.meta.url).href,
-  robotBodyMagnetic: new URL("../assets/robot-body-magnetic.svg", import.meta.url).href,
-  boxLight: new URL("../assets/box-light.PNG", import.meta.url).href,
-  boxLightAttached: new URL("../assets/box-light-attached.svg", import.meta.url).href,
-  usb: new URL("../assets/usb.svg", import.meta.url).href,
-  usbPlug: new URL("../assets/usb-plug.svg", import.meta.url).href,
-  goal: new URL("../assets/Goal.PNG", import.meta.url).href,
-  wallFill: new URL("../assets/wall-fill.svg", import.meta.url).href,
-  wallEdgeTop: new URL("../assets/wall-edge-top.svg", import.meta.url).href,
-  wallEdgeBottom: new URL("../assets/wall-edge-bottom.svg", import.meta.url).href,
-  wallEdgeLeft: new URL("../assets/wall-edge-left.svg", import.meta.url).href,
-  wallEdgeRight: new URL("../assets/wall-edge-right.svg", import.meta.url).href,
-  wallCornerTl: new URL("../assets/wall-corner-tl.svg", import.meta.url).href,
-  wallCornerTr: new URL("../assets/wall-corner-tr.svg", import.meta.url).href,
-  wallCornerBr: new URL("../assets/wall-corner-br.svg", import.meta.url).href,
-  wallCornerBl: new URL("../assets/wall-corner-bl.svg", import.meta.url).href,
-  sceneLeft: new URL("../assets/scene-left.svg", import.meta.url).href,
-  sceneRight: new URL("../assets/scene-right.svg", import.meta.url).href,
-};
+import {
+  TILE,
+  MIN_TILE,
+  DISPLAY_TILE,
+  DEFAULT_STAGE_COLUMNS,
+  DEFAULT_STAGE_ROWS,
+  MIN_STAGE_SIZE,
+  MAX_STAGE_SIZE,
+  STAGE_STORAGE_VERSION,
+  MAGNET_INTERVAL,
+  GRAVITY_INTERVAL,
+  JUMP_BUFFER_MS,
+  COYOTE_TIME_MS,
+  CHARACTER_RENDER_SCALE,
+  HEAD_RENDER_SCALE,
+  HEAD_RENDER_Y_OFFSET,
+  DETACHED_HEAD_RENDER_Y_OFFSET,
+  assetUrls,
+  wallTileVariants,
+  paletteItems,
+  singletonTiles,
+  shutterGroups,
+} from "./config.js";
+import { dom, isPlayerView } from "./dom.js";
 
 const assets = createAssetImages(assetUrls);
-
-const paletteItems = [
-  { key: ".", label: "Empty" },
-  { key: "#", label: "Wall" },
-  { key: "P", label: "Player" },
-  { key: "O", label: "Head" },
-  { key: "B", label: "Box" },
-  { key: "H", label: "Heavy Box" },
-  { key: "U", label: "USB" },
-  { key: "G", label: "Goal" },
-  { key: "r", label: "Red Button" },
-  { key: "R", label: "Red Shutter" },
-  { key: "c", label: "Cyan Button" },
-  { key: "C", label: "Cyan Shutter" },
-];
-
-const singletonTiles = new Set(["P", "O", "U", "G"]);
-const shutterGroups = {
-  red: {
-    button: "r",
-    shutter: "R",
-    accent: "#e07a86",
-    accentDark: "#8b4151",
-  },
-  cyan: {
-    button: "c",
-    shutter: "C",
-    accent: "#78d4e0",
-    accentDark: "#3d7f8a",
-  },
-};
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 ctx.imageSmoothingEnabled = false;
-const appLayout = document.getElementById("appLayout");
-const clearOverlay = document.getElementById("clearOverlay");
-const overlayNextStageButton = document.getElementById("overlayNextStageButton");
-const gameOverOverlay = document.getElementById("gameOverOverlay");
-const overlayResetButton = document.getElementById("overlayResetButton");
-const playSideActions = document.getElementById("playSideActions");
-const playResetButton = document.getElementById("playResetButton");
-const stageTitle = document.getElementById("stageTitle");
-const stageGoal = document.getElementById("stageGoal");
-const stageHint = document.getElementById("stageHint");
-const statusCard = document.getElementById("statusCard");
-const resetButton = document.getElementById("resetButton");
-const stageButtons = document.getElementById("stageButtons");
-const nextStageButton = document.getElementById("nextStageButton");
-const editModeButton = document.getElementById("editModeButton");
-const playModeButton = document.getElementById("playModeButton");
-const paletteButtons = document.getElementById("paletteButtons");
-const exportButton = document.getElementById("exportButton");
-const exportOutput = document.getElementById("exportOutput");
-const restoreButton = document.getElementById("restoreButton");
-const mapWidthInput = document.getElementById("mapWidthInput");
-const mapHeightInput = document.getElementById("mapHeightInput");
-const applyMapSizeButton = document.getElementById("applyMapSizeButton");
+const {
+  appLayout,
+  clearOverlay,
+  overlayNextStageButton,
+  gameOverOverlay,
+  overlayResetButton,
+  playSideActions,
+  playResetButton,
+  stageTitle,
+  playerStageIndex,
+  playerStageTitle,
+  stageGoal,
+  stageHint,
+  statusCard,
+  resetButton,
+  stageButtons,
+  nextStageButton,
+  editModeButton,
+  playModeButton,
+  paletteButtons,
+  exportButton,
+  exportOutput,
+  restoreButton,
+  mapWidthInput,
+  mapHeightInput,
+  applyMapSizeButton,
+} = dom;
 
 const keys = {
   up: false,
@@ -255,7 +216,7 @@ function restoreBaseStage() {
   editorStage = cloneStage(baseStage);
   resizeCanvasForGrid(editorStage.grid);
   resetWorld();
-  setMode("edit");
+  setMode(isPlayerView ? "play" : "edit");
   syncMapSizeControls();
   editorMessage = "元のステージ定義に戻しました。";
   refreshExport();
@@ -306,7 +267,7 @@ function loadStage(index) {
   editorStage = resolveEditorStage(baseStage);
   resizeCanvasForGrid(editorStage.grid);
   resetWorld();
-  setMode("edit");
+  setMode(isPlayerView ? "play" : "edit");
   editorMessage = `${editorStage.title} を読み込みました。`;
   renderStageButtons();
   syncMapSizeControls();
@@ -314,6 +275,9 @@ function loadStage(index) {
 }
 
 function resolveEditorStage(baseStage) {
+  if (isPlayerView) {
+    return cloneStage(baseStage);
+  }
   const storedStage = loadStoredStage(baseStage);
   const baseClone = cloneStage(baseStage);
   if (!storedStage) {
@@ -429,7 +393,7 @@ function resetWorld() {
 }
 
 function setMode(nextMode) {
-  mode = nextMode;
+  mode = isPlayerView ? "play" : nextMode;
   appLayout.classList.toggle("is-edit", mode === "edit");
   editModeButton.classList.toggle("is-active", mode === "edit");
   playModeButton.classList.toggle("is-active", mode === "play");
@@ -580,7 +544,7 @@ function getTile(x, y) {
 
 function isSolidTile(x, y) {
   const tile = getTile(x, y);
-  return tile === "#" || (isShutterTile(tile) && !isShutterOpenAt(x, y));
+  return tile in wallTileVariants || (isShutterTile(tile) && !isShutterOpenAt(x, y));
 }
 
 function getBoxAt(x, y) {
@@ -1307,40 +1271,8 @@ function pointHash(x, y, seed = 0) {
 function drawFloorTile(gridX, gridY, metrics) {
   const { x, y } = getTilePixel(gridX, gridY, metrics);
   const tile = metrics.tileSize;
-  const variant = (gridX + gridY) % 2;
-  const base = variant === 0 ? "#2d3046" : "#30344d";
-  const panel = variant === 0 ? "#3a3f5d" : "#363b58";
-  const accent = pointHash(gridX, gridY, 1) > 0.72 ? "#484f74" : "#434967";
-
-  ctx.fillStyle = base;
+  ctx.fillStyle = "#000";
   ctx.fillRect(x, y, tile, tile);
-
-  ctx.fillStyle = panel;
-  ctx.fillRect(x + tile * 0.0625, y + tile * 0.0625, tile * 0.875, tile * 0.875);
-
-  ctx.fillStyle = "rgba(232, 224, 255, 0.08)";
-  ctx.fillRect(x + tile * 0.0625, y + tile * 0.0625, tile * 0.875, Math.max(2, tile * 0.046875));
-  ctx.fillRect(x + tile * 0.0625, y + tile * 0.0625, Math.max(2, tile * 0.046875), tile * 0.875);
-
-  ctx.fillStyle = "rgba(8, 8, 14, 0.22)";
-  ctx.fillRect(x + tile * 0.0625, y + tile * 0.890625, tile * 0.875, Math.max(2, tile * 0.046875));
-  ctx.fillRect(x + tile * 0.890625, y + tile * 0.0625, Math.max(2, tile * 0.046875), tile * 0.875);
-
-  ctx.fillStyle = accent;
-  ctx.fillRect(x + tile * 0.28125, y + tile * 0.28125, tile * 0.4375, 2);
-  ctx.fillRect(x + tile * 0.28125, y + tile * 0.6875, tile * 0.4375, 2);
-
-  if (pointHash(gridX, gridY, 2) > 0.58) {
-    ctx.fillStyle = "rgba(207, 194, 238, 0.12)";
-    ctx.fillRect(x + tile * 0.1875, y + tile * 0.171875, Math.max(2, tile * 0.0625), Math.max(2, tile * 0.0625));
-    ctx.fillRect(x + tile * 0.75, y + tile * 0.765625, Math.max(2, tile * 0.0625), Math.max(2, tile * 0.0625));
-  }
-
-  if (pointHash(gridX, gridY, 3) > 0.76) {
-    ctx.fillStyle = "rgba(18, 18, 27, 0.34)";
-    ctx.fillRect(x + tile * 0.40625, y + tile * 0.40625, tile * 0.21875, 2);
-    ctx.fillRect(x + tile * 0.59375, y + tile * 0.4375, 2, tile * 0.15625);
-  }
 }
 
 function drawButtonTile(gridX, gridY, group, metrics) {
@@ -1450,13 +1382,12 @@ function drawSceneBackdrop(metrics) {
 }
 
 function drawBoardFromGrid(grid, metrics) {
-  fillRoundedRect(metrics.offsetX - 8, metrics.offsetY - 8, metrics.width + 16, metrics.height + 16, 8, "#191726");
-  strokeRoundedRect(metrics.offsetX - 8, metrics.offsetY - 8, metrics.width + 16, metrics.height + 16, 8, "rgba(223, 214, 248, 0.12)", 2);
+  fillRoundedRect(metrics.offsetX - 8, metrics.offsetY - 8, metrics.width + 16, metrics.height + 16, 8, "#000");
 
   for (let y = 0; y < grid.length; y += 1) {
     for (let x = 0; x < grid[y].length; x += 1) {
       const tile = grid[y][x];
-      if (tile === "#") {
+      if (isWallCell(grid, x, y)) {
         drawWallTile(grid, x, y, metrics);
       } else if (isButtonTile(tile)) {
         drawButtonTile(x, y, getShutterGroupByTile(tile), metrics);
@@ -1470,87 +1401,112 @@ function drawBoardFromGrid(grid, metrics) {
 }
 
 function isWallCell(grid, x, y) {
-  return grid[y]?.[x] === "#";
+  return grid[y]?.[x] in wallTileVariants;
 }
 
 function drawWallTile(grid, gridX, gridY, metrics) {
   const { x, y } = getTilePixel(gridX, gridY, metrics);
   const tile = metrics.tileSize;
-  const neighbors = {
-    up: isWallCell(grid, gridX, gridY - 1),
-    right: isWallCell(grid, gridX + 1, gridY),
-    down: isWallCell(grid, gridX, gridY + 1),
-    left: isWallCell(grid, gridX - 1, gridY),
+  const wallTile = grid[gridY]?.[gridX];
+  const forcedVariant = wallTileVariants[wallTile];
+  const openTop = !isWallCell(grid, gridX, gridY - 1);
+  const openRight = !isWallCell(grid, gridX + 1, gridY);
+  const openBottom = !isWallCell(grid, gridX, gridY + 1);
+  const openLeft = !isWallCell(grid, gridX - 1, gridY);
+  const hasCornerTopLeft = !forcedVariant && openTop && openLeft;
+  const hasCornerTopRight = !forcedVariant && openTop && openRight;
+  const hasCornerBottomRight = !forcedVariant && openBottom && openRight;
+  const hasCornerBottomLeft = !forcedVariant && openBottom && openLeft;
+  const isForcedCorner =
+    wallTile === "5" ||
+    wallTile === "6" ||
+    wallTile === "7" ||
+    wallTile === "8";
+
+  if (forcedVariant && !isForcedCorner && drawAsset(forcedVariant, x, y, tile, tile)) {
+    return;
+  }
+
+  if (
+    isForcedCorner ||
+    openTop ||
+    openRight ||
+    openBottom ||
+    openLeft
+  ) {
+    drawFloorTile(gridX, gridY, metrics);
+    if (forcedVariant) {
+      drawAsset(forcedVariant, x, y, tile, tile);
+      return;
+    }
+    if (hasCornerTopLeft) {
+      drawAsset("wallCornerTopLeft", x, y, tile, tile);
+    }
+    if (hasCornerTopRight) {
+      drawAsset("wallCornerTopRight", x, y, tile, tile);
+    }
+    if (hasCornerBottomRight) {
+      drawAsset("wallCornerBottomRight", x, y, tile, tile);
+    }
+    if (hasCornerBottomLeft) {
+      drawAsset("wallCornerBottomLeft", x, y, tile, tile);
+    }
+    if (openTop && !(hasCornerTopLeft || hasCornerTopRight)) {
+      drawAsset("wallCapTop", x, y, tile, tile);
+    }
+    if (openRight && !(hasCornerTopRight || hasCornerBottomRight)) {
+      drawAsset("wallCapRight", x, y, tile, tile);
+    }
+    if (openBottom && !(hasCornerBottomRight || hasCornerBottomLeft)) {
+      drawAsset("wallCapBottom", x, y, tile, tile);
+    }
+    if (openLeft && !(hasCornerBottomLeft || hasCornerTopLeft)) {
+      drawAsset("wallCapLeft", x, y, tile, tile);
+    }
+    return;
+  }
+  if (drawAsset("wallBlock", x, y, tile, tile)) {
+    return;
+  }
+  const radius = Math.max(2, tile * 0.04);
+  const borderSize = Math.max(2, tile * 0.03);
+  const seamSize = Math.max(2, tile * 0.045);
+  const topPattern = gridY % 2 === 0 ? [0.14, 0.44, 0.74] : [0.28, 0.58];
+  const bottomPattern = gridY % 2 === 0 ? [0.28, 0.58] : [0.14, 0.44, 0.74];
+
+  ctx.fillStyle = "#000";
+  ctx.fillRect(x, y, tile, tile);
+  fillRoundedRect(x, y, tile, tile, radius, "#50679d");
+  strokeRoundedRect(x, y, tile, tile, radius, "#243458", borderSize);
+
+  ctx.save();
+  roundedRectPath(x, y, tile, tile, radius);
+  ctx.clip();
+
+  ctx.fillStyle = "#8099d2";
+  ctx.fillRect(x, y, tile, Math.max(3, tile * 0.14));
+  ctx.fillRect(x, y, Math.max(3, tile * 0.08), tile);
+
+  ctx.fillStyle = "#314772";
+  ctx.fillRect(x, y + tile * 0.5 - seamSize / 2, tile, seamSize);
+
+  const drawBrickCuts = (positions, topOffset) => {
+    positions.forEach((leftRatio) => {
+      const cutX = x + tile * leftRatio;
+      const cutY = y + tile * topOffset;
+      const cutW = tile * 0.12;
+      const cutH = tile * 0.12;
+      ctx.fillStyle = "#2d426f";
+      ctx.fillRect(cutX, cutY, cutW, cutH);
+      ctx.fillStyle = "rgba(208, 226, 255, 0.16)";
+      ctx.fillRect(cutX, cutY, cutW, Math.max(2, tile * 0.02));
+    });
   };
 
-  const capHeight = neighbors.up ? 6 : 10;
-  const variant = pointHash(gridX, gridY, 4);
-  const cap = (capHeight / TILE) * tile;
+  drawBrickCuts(topPattern, 0.18);
+  drawBrickCuts(bottomPattern, 0.66);
 
-  ctx.fillStyle = "#47415c";
-  ctx.fillRect(x, y, tile, tile);
-
-  ctx.fillStyle = "#5d5677";
-  ctx.fillRect(x + tile * 0.0625, y + cap, tile * 0.875, tile - cap - tile * 0.0625);
-
-  ctx.fillStyle = "#857ba4";
-  ctx.fillRect(x + tile * 0.0625, y + tile * 0.0625, tile * 0.875, cap);
-
-  ctx.fillStyle = "rgba(244, 236, 255, 0.26)";
-  ctx.fillRect(x + tile * 0.0625, y + tile * 0.0625, tile * 0.875, 2);
-
-  ctx.fillStyle = "#3a344c";
-  ctx.fillRect(x + tile * 0.0625, y + tile * 0.875, tile * 0.875, Math.max(2, tile * 0.0625));
-
-  if (!neighbors.left) {
-    ctx.fillStyle = "#71698d";
-    ctx.fillRect(x + tile * 0.0625, y + cap, Math.max(2, tile * 0.0625), tile - cap - tile * 0.125);
-  }
-
-  if (!neighbors.right) {
-    ctx.fillStyle = "#322d42";
-    ctx.fillRect(x + tile * 0.875, y + cap, Math.max(2, tile * 0.0625), tile - cap - tile * 0.125);
-  }
-
-  if (!neighbors.up) {
-    ctx.fillStyle = "#b6a9d7";
-    ctx.fillRect(x + tile * 0.125, y + tile * 0.15625, tile * 0.75, Math.max(2, tile * 0.046875));
-  }
-
-  if (!neighbors.down) {
-    ctx.fillStyle = "#2a2538";
-    ctx.fillRect(x + tile * 0.125, y + tile * 0.84375, tile * 0.75, 2);
-  }
-
-  ctx.fillStyle = variant > 0.5 ? "#665f84" : "#625b80";
-  ctx.fillRect(x + tile * 0.1875, y + tile * 0.28125, tile * 0.625, tile * 0.53125);
-
-  ctx.fillStyle = "rgba(240, 231, 255, 0.1)";
-  ctx.fillRect(x + tile * 0.21875, y + tile * 0.3125, tile * 0.5625, 2);
-  ctx.fillRect(x + tile * 0.21875, y + tile * 0.3125, 2, tile * 0.46875);
-
-  ctx.fillStyle = "rgba(16, 15, 24, 0.22)";
-  ctx.fillRect(x + tile * 0.21875, y + tile * 0.78125, tile * 0.5625, 2);
-  ctx.fillRect(x + tile * 0.75, y + tile * 0.3125, 2, tile * 0.46875);
-
-  if (variant > 0.68) {
-    ctx.fillStyle = "#8f85af";
-    ctx.fillRect(x + tile * 0.375, y + tile * 0.4375, tile * 0.25, 2);
-    ctx.fillRect(x + tile * 0.34375, y + tile * 0.5625, tile * 0.3125, 2);
-  }
-
-  if (variant < 0.24) {
-    ctx.fillStyle = "rgba(33, 29, 47, 0.62)";
-    ctx.fillRect(x + tile * 0.28125, y + tile * 0.46875, 2, tile * 0.1875);
-    ctx.fillRect(x + tile * 0.3125, y + tile * 0.625, tile * 0.1875, 2);
-  }
-
-  ctx.fillStyle = "#cfc4ee";
-  const rivet = Math.max(2, tile * 0.046875);
-  ctx.fillRect(x + tile * 0.15625, y + tile * 0.21875, rivet, rivet);
-  ctx.fillRect(x + tile * 0.75, y + tile * 0.21875, rivet, rivet);
-  ctx.fillRect(x + tile * 0.15625, y + tile * 0.75, rivet, rivet);
-  ctx.fillRect(x + tile * 0.75, y + tile * 0.75, rivet, rivet);
+  ctx.restore();
 }
 
 function drawGoalAt(gridX, gridY, metrics) {
@@ -1594,15 +1550,36 @@ function drawUsbAt(gridX, gridY, metrics) {
 function drawBoxAt(gridX, gridY, attached, metrics, type = "light") {
   const { x: cellX, y: cellY } = getTilePixel(gridX, gridY, metrics);
   const tile = metrics.tileSize;
-  if (type === "light" && drawAsset(attached ? "boxLightAttached" : "boxLight", cellX, cellY, tile, tile)) {
-    return;
-  }
-  const x = cellX + tile * 0.15625;
-  const y = cellY + tile * 0.1875;
+  const isHeavy = type === "heavy";
+  const lightScale = 1;
+  const lightOffset = (tile - tile * lightScale) / 2;
+  const shadowWidth = tile * (isHeavy ? 0.33 : 0.23);
+  const shadowHeight = tile * (isHeavy ? 0.125 : 0.09);
+
   ctx.fillStyle = "rgba(78, 92, 116, 0.14)";
   ctx.beginPath();
-  ctx.ellipse(cellX + tile / 2, cellY + tile * 0.875, tile * 0.28125, tile * 0.109375, 0, 0, Math.PI * 2);
+  ctx.ellipse(cellX + tile / 2, cellY + tile * 0.875, shadowWidth, shadowHeight, 0, 0, Math.PI * 2);
   ctx.fill();
+
+  if (
+    type === "light" &&
+    drawAsset(
+      attached ? "boxLightAttached" : "boxLight",
+      cellX + lightOffset,
+      cellY + lightOffset,
+      tile * lightScale,
+      tile * lightScale
+    )
+  ) {
+    return;
+  }
+
+  if (isHeavy && drawAsset("boxHeavy", cellX - tile * 0.04, cellY - tile * 0.04, tile * 1.08, tile * 1.08)) {
+    return;
+  }
+
+  const x = cellX + tile * 0.15625;
+  const y = cellY + tile * 0.1875;
   const boxColor = type === "heavy" ? "#6d657f" : attached ? "#a7b7ff" : "#99acb7";
   const frameColor = type === "heavy" ? "#3d3749" : "#58646f";
   fillRoundedRect(x, y, tile * 0.6875, tile * 0.71875, 16, boxColor);
@@ -1683,13 +1660,13 @@ function drawPlayerAt(gridX, gridY, hasHead, magneticBody, hasUsb, metrics) {
   const facing = world.player.facing ?? "left";
   const bodyImage = assets[bodyName];
   const bodyReady = bodyImage && bodyImage.complete && bodyImage.naturalWidth > 0;
-  const bodyWidth = tile * 0.52;
-  const bodyHeight = tile * 0.52;
+  const bodyWidth = tile * 0.52 * CHARACTER_RENDER_SCALE;
+  const bodyHeight = tile * 0.52 * CHARACTER_RENDER_SCALE;
   const bodyX = x + (tile - bodyWidth) / 2;
   const bodyY = y + tile - bodyHeight;
-  const headSize = tile;
-  const headX = x;
-  const headY = y - tile * 0.4;
+  const headSize = tile * HEAD_RENDER_SCALE * CHARACTER_RENDER_SCALE;
+  const headX = x + (tile - headSize) / 2;
+  const headY = y - tile * 0.15 + tile * HEAD_RENDER_Y_OFFSET;
   if (!bodyReady) {
     ctx.fillStyle = "rgba(77, 87, 83, 0.12)";
     ctx.beginPath();
@@ -1723,7 +1700,15 @@ function drawPlayerAt(gridX, gridY, hasHead, magneticBody, hasUsb, metrics) {
 
 function drawHeadAtGrid(gridX, gridY, detached, hasUsb, metrics) {
   const { x, y } = getTilePixel(gridX, gridY, metrics);
-  drawHeadAtPixels(x, y, metrics.tileSize, world.head.facing ?? "left", detached, hasUsb);
+  const headSize = metrics.tileSize * HEAD_RENDER_SCALE * CHARACTER_RENDER_SCALE;
+  drawHeadAtPixels(
+    x + (metrics.tileSize - headSize) / 2,
+    y + (metrics.tileSize - headSize) / 2 + metrics.tileSize * DETACHED_HEAD_RENDER_Y_OFFSET,
+    headSize,
+    world.head.facing ?? "left",
+    detached,
+    hasUsb
+  );
 }
 
 function drawHeadAtPixels(tileX, tileY, tileSize, facing = "left", detached = false, hasUsb = false) {
@@ -1784,6 +1769,8 @@ function drawEditorCursorHint(metrics) {
 }
 
 function updateHud() {
+  playerStageIndex.textContent = `Stage ${stageIndex + 1}`;
+  playerStageTitle.textContent = editorStage.title;
   stageTitle.textContent = editorStage.title;
   stageGoal.textContent = editorStage.goal;
   stageHint.textContent =
@@ -1885,8 +1872,13 @@ function refreshExport() {
 window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
 
-  if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "q", "e", "w", "a", "s", "d"].includes(key)) {
+  if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "q", "e", "w", "a", "s", "d", "enter"].includes(key)) {
     event.preventDefault();
+  }
+
+  if (key === "enter" && mode === "play" && world.cleared && !world.gameOver && stageIndex < stageDefinitions.length - 1) {
+    loadStage(stageIndex + 1);
+    return;
   }
 
   if (mode !== "play") {
@@ -1975,7 +1967,7 @@ canvas.addEventListener("contextmenu", (event) => {
 });
 
 resetButton.addEventListener("click", () => {
-  if (mode === "edit") {
+  if (!isPlayerView && mode === "edit") {
     resetWorld();
     editorMessage = "編集内容を保ったまま、テスト状態をリセットしました。";
     return;
@@ -2007,14 +1999,16 @@ overlayNextStageButton.addEventListener("click", () => {
 });
 
 editModeButton.addEventListener("click", () => {
-  setMode("edit");
+  if (!isPlayerView) {
+    setMode("edit");
+  }
 });
 
 playModeButton.addEventListener("click", () => {
   const problems = validateStage(editorStage);
   if (problems.length > 0) {
     editorMessage = `Playできません: ${problems.join(" / ")}`;
-    setMode("edit");
+    setMode(isPlayerView ? "play" : "edit");
     return;
   }
   resetWorld();
@@ -2036,7 +2030,12 @@ renderPaletteButtons();
 syncMapSizeControls();
 resizeCanvasForGrid(editorStage.grid);
 refreshExport();
-setMode("edit");
+if (isPlayerView) {
+  resetWorld();
+  setMode("play");
+} else {
+  setMode("edit");
+}
 try {
   draw();
 } catch (error) {

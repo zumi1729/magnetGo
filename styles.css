@@ -95,6 +95,118 @@ body::before {
   grid-template-columns: 1fr;
 }
 
+.player-only {
+  display: none;
+}
+
+body.view-play .player-only {
+  display: block;
+}
+
+body.view-play .edit-only {
+  display: none !important;
+}
+
+body.view-play .layout {
+  width: min(1200px, calc(100vw - 24px));
+  min-height: 100vh;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+}
+
+body.view-play .panel-side {
+  display: none;
+}
+
+body.view-play .layout.is-edit {
+  grid-template-columns: 1fr;
+}
+
+body.view-play .player-layout,
+body.view-play .layout {
+  grid-template-columns: 1fr;
+}
+
+body.view-play .panel-game {
+  width: min(100%, 1080px);
+  padding: 18px;
+}
+
+body.view-play .player-stage-meta {
+  margin-bottom: 10px;
+}
+
+body.view-play .player-stage-meta .eyebrow {
+  margin-bottom: 4px;
+}
+
+body.view-play .player-stage-meta h2 {
+  margin: 0;
+}
+
+body.view-play .panel-head {
+  margin-bottom: 10px;
+}
+
+body.view-play .player-panel-head,
+body.view-play .panel-head {
+  justify-content: flex-end;
+}
+
+body.view-play .game-shell {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
+body.view-play .game-canvas-wrap {
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+
+body.view-play #gameCanvas {
+  width: min(100%, 960px);
+}
+
+body.view-play .player-info {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  width: min(100%, 960px);
+  margin: 18px auto 0;
+}
+
+body.view-play .player-info-block {
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+body.view-play .player-info-block h2 {
+  margin: 0;
+}
+
+body.view-play .player-controls {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+
+body.view-play .player-controls li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  body.view-play .player-info {
+    grid-template-columns: 1fr;
+  }
+}
+
 .panel-head {
   display: flex;
   justify-content: space-between;
@@ -243,6 +355,13 @@ h2 {
 .reset-button-secondary {
   background: linear-gradient(180deg, rgba(77, 70, 105, 0.98), rgba(49, 44, 70, 0.98));
   color: var(--ink);
+}
+
+.player-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .controls {

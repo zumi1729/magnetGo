@@ -240,8 +240,6 @@ python3 -m http.server 8000
 
 - `robot-head.svg`
 - `robot-head-detached.svg`
-- `robot-body.svg`
-- `robot-body-magnetic.svg`
 - `box-light.svg`
 - `box-light-attached.svg`
 - `usb.svg`
