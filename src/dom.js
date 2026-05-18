@@ -28,7 +28,7 @@ export const dom = {
   applyMapSizeButton: getElementOrStub("applyMapSizeButton", "button"),
 };
 
-export const shellMode = new URLSearchParams(window.location.search).get("mode") === "play" ? "play" : "edit";
+export const shellMode = new URLSearchParams(window.location.search).get("mode") === "edit" ? "edit" : "play";
 export const isPlayerView = shellMode === "play";
 
 document.body.classList.toggle("view-play", isPlayerView);
