@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="頭を置き、磁力で道を作る2Dパズルゲーム magnetGO の遊び方。"
+    />
+    <title>遊び方 | magnetGO</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="tutorial-page">
+    <header class="tutorial-header">
+      <a class="tutorial-logo" href="./index.html?mode=play" aria-label="magnetGOをプレイ">
+        magnet<span>GO</span>
+      </a>
+      <a class="tutorial-header-play" href="./index.html?mode=play">ゲームを始める</a>
+    </header>
+
+    <main class="tutorial-main">
+      <section class="tutorial-hero" aria-labelledby="tutorial-heading">
+        <div class="tutorial-hero-copy">
+          <p class="tutorial-kicker">How to play</p>
+          <h1 id="tutorial-heading">頭を置いて、<br /><em>磁力で道を作る。</em></h1>
+          <p class="tutorial-lead">
+            magnetGOは、頭を取り外せる小さなロボの2Dパズルゲーム。<br />
+            頭を磁力の起点にして、金属箱を動かし、USBを出口まで運ぼう。
+          </p>
+          <div class="tutorial-hero-actions">
+            <a class="tutorial-primary-button" href="./index.html?mode=play">今すぐプレイ</a>
+            <a class="tutorial-text-link" href="#basics">遊び方を見る <span aria-hidden="true">↓</span></a>
+          </div>
+        </div>
+
+        <div class="tutorial-hero-visual" aria-label="ロボの頭と本体を離して使うゲームです">
+          <div class="tutorial-orbit tutorial-orbit-one"></div>
+          <div class="tutorial-orbit tutorial-orbit-two"></div>
+          <img class="tutorial-hero-head" src="./assets/robot-head2.PNG" alt="取り外したロボの頭" />
+          <img class="tutorial-hero-body" src="./assets/robot-body3.PNG" alt="頭を外したロボの本体" />
+          <span class="tutorial-magnet-label">MAGNET<br />SOURCE</span>
+        </div>
+      </section>
+
+      <section id="basics" class="tutorial-section" aria-labelledby="basics-heading">
+        <div class="tutorial-section-heading">
+          <p class="tutorial-step-number">01</p>
+          <div>
+            <p class="tutorial-kicker">Basic controls</p>
+            <h2 id="basics-heading">まずは、動かしてみる</h2>
+          </div>
+        </div>
+
+        <div class="tutorial-control-grid">
+          <article class="tutorial-control-card">
+            <div class="tutorial-key-cluster" aria-hidden="true">
+              <span></span><kbd>W</kbd><span></span>
+              <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+            </div>
+            <div>
+              <h3>移動する</h3>
+              <p><kbd>WASD</kbd> または矢印キーで、ロボを左右に動かします。</p>
+            </div>
+          </article>
+
+          <article class="tutorial-control-card">
+            <div class="tutorial-space-key" aria-hidden="true"><kbd>SPACE</kbd></div>
+            <div>
+              <h3>頭を置く・拾う</h3>
+              <p><kbd>Space</kbd> で頭をその場に置きます。もう一度近づけば回収できます。</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="tutorial-section tutorial-magnet-section" aria-labelledby="magnet-heading">
+        <div class="tutorial-section-heading">
+          <p class="tutorial-step-number">02</p>
+          <div>
+            <p class="tutorial-kicker">Core mechanic</p>
+            <h2 id="magnet-heading">磁力は「頭」から発生する</h2>
+          </div>
+        </div>
+
+        <p class="tutorial-section-intro">
+          頭を置いた場所が磁力の中心です。本体を別の場所へ動かしても、力の向きは頭の位置で決まります。
+        </p>
+
+        <div class="tutorial-magnet-grid">
+          <article class="tutorial-magnet-card tutorial-attract-card">
+            <div class="tutorial-magnet-demo">
+              <img src="./assets/robot-head2.PNG" alt="ロボの頭" />
+              <span class="tutorial-force-arrow tutorial-force-left" aria-hidden="true"></span>
+              <img src="./assets/block2.PNG" alt="金属箱" />
+            </div>
+            <div class="tutorial-magnet-copy">
+              <kbd>Q</kbd>
+              <div>
+                <p class="tutorial-kicker">Attract</p>
+                <h3>引き寄せる</h3>
+                <p>金属箱を頭の方向へ動かします。</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="tutorial-magnet-card tutorial-repel-card">
+            <div class="tutorial-magnet-demo">
+              <img src="./assets/robot-head2.PNG" alt="ロボの頭" />
+              <span class="tutorial-force-arrow tutorial-force-right" aria-hidden="true"></span>
+              <img src="./assets/block2.PNG" alt="金属箱" />
+            </div>
+            <div class="tutorial-magnet-copy">
+              <kbd>E</kbd>
+              <div>
+                <p class="tutorial-kicker">Repel</p>
+                <h3>押し出す</h3>
+                <p>金属箱を頭から遠ざけます。</p>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <aside class="tutorial-tip">
+          <strong>POINT</strong>
+          <p>箱を動かすだけでなく、重い箱の磁力を利用してロボ自身を動かすこともできます。</p>
+        </aside>
+      </section>
+
+      <section class="tutorial-section" aria-labelledby="goal-heading">
+        <div class="tutorial-section-heading">
+          <p class="tutorial-step-number">03</p>
+          <div>
+            <p class="tutorial-kicker">Mission</p>
+            <h2 id="goal-heading">USBを取り戻して、出口へ</h2>
+          </div>
+        </div>
+
+        <ol class="tutorial-mission-list">
+          <li>
+            <span class="tutorial-mission-index">1</span>
+            <img src="./assets/usb.PNG" alt="USB" />
+            <div><h3>USBを拾う</h3><p>本体でUSBの場所まで進みます。</p></div>
+          </li>
+          <li>
+            <span class="tutorial-mission-index">2</span>
+            <img src="./assets/robot-head2.PNG" alt="ロボの頭" />
+            <div><h3>頭に届ける</h3><p>USBを持った本体で、頭に近づきます。</p></div>
+          </li>
+          <li>
+            <span class="tutorial-mission-index">3</span>
+            <img src="./assets/Goal.PNG" alt="出口" />
+            <div><h3>出口へ入る</h3><p>頭を装着して出口へ入ればクリアです。</p></div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="tutorial-portfolio" aria-labelledby="design-heading">
+        <div>
+          <p class="tutorial-kicker">Behind the game</p>
+          <h2 id="design-heading">ひとつのルールから、<br />考える遊びを広げる。</h2>
+        </div>
+        <div class="tutorial-portfolio-copy">
+          <p>
+            「頭を置いた位置が磁力の起点になる」という一つのルールから、箱の移動、足場作り、ジャンプ、スイッチ操作へ展開することを意識して設計しました。
+          </p>
+          <ul>
+            <li>JavaScript / Canvasによるゲームループと描画</li>
+            <li>重力・磁力・衝突判定の独自実装</li>
+            <li>制作とテストを行えるブラウザ内ステージエディタ</li>
+          </ul>
+          <a class="tutorial-editor-link" href="./index.html?mode=edit">ステージエディタを見る →</a>
+        </div>
+      </section>
+
+      <section class="tutorial-final-cta" aria-labelledby="play-heading">
+        <img src="./assets/robot-head2-right.PNG" alt="" />
+        <p class="tutorial-kicker">Ready?</p>
+        <h2 id="play-heading">置いて、ずらして、ひらめこう。</h2>
+        <a class="tutorial-primary-button" href="./index.html?mode=play">magnetGOをプレイ</a>
+      </section>
+    </main>
+
+    <footer class="tutorial-footer">
+      <p>magnetGO</p>
+      <a href="https://github.com/zumi1729/magnetGo">GitHub</a>
+    </footer>
+  </body>
+</html>
