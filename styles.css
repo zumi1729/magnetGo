@@ -60,61 +60,6 @@ body::before {
   gap: 14px;
 }
 
-.top-nav {
-  width: min(1500px, calc(100vw - 24px));
-  margin: 18px auto 0;
-  display: flex;
-  justify-content: center;
-  position: relative;
-  z-index: 1;
-}
-
-.top-nav-button {
-  appearance: none;
-  border: 2px solid rgba(255, 246, 204, 0.72);
-  border-radius: 999px;
-  background:
-    radial-gradient(circle at 24% 20%, rgba(255, 255, 255, 0.72) 0 8%, transparent 9%),
-    linear-gradient(180deg, #ffe58a 0%, #ffb84a 58%, #f08b42 100%);
-  color: #33221a;
-  padding: 16px 34px;
-  font: 700 18px/1 "Iosevka", "IBM Plex Mono", "MS Gothic", monospace;
-  text-decoration: none;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.42),
-    inset 0 -5px 0 rgba(142, 76, 29, 0.26),
-    0 10px 0 rgba(89, 54, 28, 0.5),
-    0 18px 28px rgba(7, 7, 12, 0.26);
-  transition:
-    transform 120ms ease,
-    background 120ms ease,
-    box-shadow 120ms ease;
-}
-
-.top-nav-button:hover {
-  transform: translateY(-3px) rotate(-1deg);
-  background:
-    radial-gradient(circle at 24% 20%, rgba(255, 255, 255, 0.78) 0 8%, transparent 9%),
-    linear-gradient(180deg, #fff09e 0%, #ffc95c 58%, #f69a4b 100%);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.46),
-    inset 0 -5px 0 rgba(142, 76, 29, 0.22),
-    0 13px 0 rgba(89, 54, 28, 0.5),
-    0 24px 34px rgba(7, 7, 12, 0.3);
-}
-
-.top-nav-button:active {
-  transform: translateY(5px);
-  box-shadow:
-    inset 0 2px 0 rgba(255, 255, 255, 0.34),
-    inset 0 -3px 0 rgba(142, 76, 29, 0.22),
-    0 4px 0 rgba(89, 54, 28, 0.5),
-    0 12px 20px rgba(7, 7, 12, 0.24);
-}
-
 .layout.is-edit {
   grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.86fr);
   align-items: start;
@@ -164,15 +109,10 @@ body.view-play .edit-only {
 
 body.view-play .layout {
   width: min(1200px, calc(100vw - 24px));
-  min-height: calc(100vh - 72px);
+  min-height: 100vh;
   margin: 0 auto;
   display: grid;
   place-items: center;
-}
-
-body.view-play .top-nav {
-  width: min(1200px, calc(100vw - 24px));
-  margin-top: 12px;
 }
 
 .tutorial-page {
@@ -237,14 +177,14 @@ body.view-play .top-nav {
 }
 
 .tutorial-main section {
-  padding: 96px 0;
+  padding: 82px 0;
   border: 0;
   border-radius: 0;
   background: none;
 }
 
 .tutorial-hero {
-  min-height: 680px;
+  min-height: 560px;
   display: grid;
   grid-template-columns: 1.05fr 0.95fr;
   align-items: center;
@@ -270,7 +210,7 @@ body.view-play .top-nav {
 }
 
 .tutorial-hero h1 {
-  font-size: clamp(44px, 6vw, 76px);
+  font-size: clamp(42px, 5.5vw, 68px);
 }
 
 .tutorial-hero h1 em {
@@ -366,6 +306,126 @@ body.view-play .top-nav {
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.12em;
+}
+
+.tutorial-quick-start {
+  padding: clamp(28px, 5vw, 52px) !important;
+  border: 1px solid rgba(255, 196, 95, 0.28) !important;
+  border-radius: 22px !important;
+  background:
+    linear-gradient(145deg, rgba(64, 58, 88, 0.92), rgba(26, 24, 38, 0.96)) !important;
+  box-shadow: 0 28px 54px rgba(4, 4, 10, 0.3);
+}
+
+.tutorial-quick-title {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 1.1fr);
+  column-gap: 50px;
+  align-items: end;
+}
+
+.tutorial-quick-title .tutorial-kicker {
+  grid-column: 1 / -1;
+}
+
+.tutorial-quick-title h2 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.25;
+  letter-spacing: -0.05em;
+}
+
+.tutorial-quick-title > p:last-child {
+  margin: 0;
+  color: #c5bed2;
+  line-height: 1.8;
+}
+
+.tutorial-quick-keys {
+  margin-top: 34px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tutorial-quick-keys div {
+  min-height: 104px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(17, 16, 27, 0.56);
+  text-align: center;
+}
+
+.tutorial-quick-keys kbd,
+.tutorial-quick-flow kbd {
+  color: #fff;
+  font-weight: 900;
+}
+
+.tutorial-quick-keys kbd {
+  font-size: 18px;
+}
+
+.tutorial-quick-keys span {
+  color: #c5bed2;
+  font-size: 13px;
+}
+
+.tutorial-quick-keys .is-attract {
+  border-color: rgba(142, 230, 236, 0.36);
+}
+
+.tutorial-quick-keys .is-attract kbd {
+  color: #8ee6ec;
+}
+
+.tutorial-quick-keys .is-repel {
+  border-color: rgba(255, 196, 95, 0.36);
+}
+
+.tutorial-quick-keys .is-repel kbd {
+  color: #ffc45f;
+}
+
+.tutorial-quick-flow {
+  margin: 26px 0 0;
+  padding: 22px 0 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.tutorial-quick-flow li {
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tutorial-quick-flow li + li {
+  border-left: 1px solid var(--line);
+}
+
+.tutorial-quick-flow strong {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffc45f;
+  color: #2b2119;
+}
+
+.tutorial-quick-flow span {
+  line-height: 1.6;
 }
 
 .tutorial-section {
@@ -617,6 +677,10 @@ kbd {
   .tutorial-main section { padding: 72px 0; }
   .tutorial-hero { min-height: auto; grid-template-columns: 1fr; gap: 22px; }
   .tutorial-hero-visual { width: min(480px, 100%); margin: 0 auto; }
+  .tutorial-quick-title { grid-template-columns: 1fr; gap: 14px; }
+  .tutorial-quick-keys { grid-template-columns: repeat(2, 1fr); }
+  .tutorial-quick-flow { grid-template-columns: 1fr; }
+  .tutorial-quick-flow li + li { border-top: 1px solid var(--line); border-left: 0; }
   .tutorial-control-grid,
   .tutorial-magnet-grid,
   .tutorial-portfolio { grid-template-columns: 1fr; }
@@ -678,7 +742,7 @@ body.view-play .player-stage-meta h2 {
 }
 
 body.view-play .panel-head {
-  margin-bottom: 10px;
+  display: none;
 }
 
 body.view-play .player-panel-head,
@@ -839,12 +903,34 @@ h2 {
 
 .play-side-actions {
   display: none;
-  align-self: start;
+  width: min(100%, 960px);
+  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
 }
 
 .play-side-actions.is-visible {
-  display: grid;
+  display: flex;
+}
+
+body.view-play .play-side-actions {
+  margin-bottom: 12px;
+}
+
+.play-side-actions .reset-button {
+  min-width: 112px;
+  min-height: 44px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.play-side-actions .guide-button {
+  background: linear-gradient(180deg, #f0bd62 0%, #c98036 100%);
+  color: #2e2118;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -2px 0 rgba(96, 52, 23, 0.38),
+    0 8px 14px rgba(7, 7, 12, 0.18);
 }
 
 .reset-button,

@@ -29,9 +29,6 @@
     </style>
   </head>
   <body>
-    <header class="top-nav">
-      <a class="top-nav-button" href="./tutorial.html">遊び方</a>
-    </header>
     <main id="appLayout" class="layout">
       <section class="panel panel-game">
         <div class="panel-head">
@@ -40,11 +37,15 @@
             <h1>magnetGO</h1>
           </div>
           <div class="head-actions">
-            <button id="resetButton" class="reset-button" type="button">Reset</button>
+            <button id="resetButton" class="reset-button edit-only" type="button">Reset</button>
             <button id="restoreButton" class="reset-button reset-button-secondary edit-only" type="button">Restore Base</button>
           </div>
         </div>
         <div class="game-shell">
+          <div id="playSideActions" class="play-side-actions" aria-hidden="true">
+            <a class="reset-button player-link guide-button" href="./tutorial.html">遊び方</a>
+            <button id="playResetButton" class="reset-button" type="button">RESET</button>
+          </div>
           <div class="game-canvas-wrap">
             <div class="player-stage-meta player-only">
               <p id="playerStageIndex" class="eyebrow"></p>
@@ -66,9 +67,6 @@
                 <button id="overlayResetButton" class="reset-button" type="button">Reset</button>
               </div>
             </div>
-          </div>
-          <div id="playSideActions" class="play-side-actions" aria-hidden="true">
-            <button id="playResetButton" class="reset-button" type="button">Reset</button>
           </div>
         </div>
         <div class="player-info player-only">
