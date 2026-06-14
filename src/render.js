@@ -299,19 +299,20 @@ export function createRenderer({
   }
 
   function drawSceneBackdrop(metrics) {
+    const isPlay = readMode() === "play";
     const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, "#1c1a2a");
-    gradient.addColorStop(0.55, "#2b2740");
-    gradient.addColorStop(1, "#151320");
+    gradient.addColorStop(0, isPlay ? "#77709a" : "#1c1a2a");
+    gradient.addColorStop(0.55, isPlay ? "#514b70" : "#2b2740");
+    gradient.addColorStop(1, isPlay ? "#302c46" : "#151320");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.025)";
+    ctx.fillStyle = isPlay ? "rgba(255, 255, 255, 0.05)" : "rgba(255, 255, 255, 0.025)";
     for (let y = 0; y < canvas.height; y += 6) {
       ctx.fillRect(0, y, canvas.width, 2);
     }
 
-    ctx.fillStyle = "rgba(11, 10, 19, 0.34)";
+    ctx.fillStyle = isPlay ? "rgba(35, 31, 55, 0.3)" : "rgba(11, 10, 19, 0.34)";
     ctx.fillRect(0, canvas.height - 260, canvas.width, 260);
 
     const lightBand = ctx.createLinearGradient(0, metrics.offsetY - 120, 0, metrics.offsetY + metrics.height + 180);
@@ -324,14 +325,14 @@ export function createRenderer({
     drawAsset("sceneLeft", 32, 68, 192, 192, 0.76);
     drawAsset("sceneRight", canvas.width - 224, canvas.height - 268, 192, 192, 0.76);
 
-    ctx.fillStyle = "rgba(18, 16, 30, 0.52)";
+    ctx.fillStyle = isPlay ? "rgba(42, 37, 62, 0.42)" : "rgba(18, 16, 30, 0.52)";
     ctx.fillRect(metrics.offsetX - 58, metrics.offsetY - 46, metrics.width + 116, metrics.height + 92);
 
-    fillRoundedRect(metrics.offsetX - 24, metrics.offsetY - 22, metrics.width + 48, metrics.height + 44, 14, "rgba(70, 63, 96, 0.74)");
-    strokeRoundedRect(metrics.offsetX - 24, metrics.offsetY - 22, metrics.width + 48, metrics.height + 44, 14, "rgba(219, 208, 245, 0.1)", 2);
+    fillRoundedRect(metrics.offsetX - 24, metrics.offsetY - 22, metrics.width + 48, metrics.height + 44, 14, isPlay ? "rgba(188, 175, 225, 0.82)" : "rgba(70, 63, 96, 0.74)");
+    strokeRoundedRect(metrics.offsetX - 24, metrics.offsetY - 22, metrics.width + 48, metrics.height + 44, 14, isPlay ? "rgba(255, 255, 255, 0.56)" : "rgba(219, 208, 245, 0.1)", 2);
 
-    fillRoundedRect(metrics.offsetX - 12, metrics.offsetY - 10, metrics.width + 24, metrics.height + 20, 10, "rgba(18, 17, 29, 0.82)");
-    strokeRoundedRect(metrics.offsetX - 12, metrics.offsetY - 10, metrics.width + 24, metrics.height + 20, 10, "rgba(131, 119, 173, 0.22)", 1.5);
+    fillRoundedRect(metrics.offsetX - 12, metrics.offsetY - 10, metrics.width + 24, metrics.height + 20, 10, isPlay ? "rgba(35, 32, 51, 0.9)" : "rgba(18, 17, 29, 0.82)");
+    strokeRoundedRect(metrics.offsetX - 12, metrics.offsetY - 10, metrics.width + 24, metrics.height + 20, 10, isPlay ? "rgba(255, 230, 150, 0.32)" : "rgba(131, 119, 173, 0.22)", 1.5);
 
     ctx.fillStyle = "rgba(223, 214, 248, 0.05)";
     for (let i = 0; i < 18; i += 1) {
@@ -556,14 +557,14 @@ export function createRenderer({
     const attractActive = readMode() === "play" && keys.attract;
     const repelActive = readMode() === "play" && keys.repel;
     const ringStroke = attractActive
-      ? "rgba(173, 233, 255, 0.6)"
+      ? "rgba(142, 239, 224, 0.82)"
       : repelActive
-        ? "rgba(184, 146, 248, 0.72)"
+        ? "rgba(255, 177, 91, 0.86)"
         : "rgba(187, 170, 235, 0.54)";
     const ringFill = attractActive
-      ? "rgba(164, 229, 255, 0.12)"
+      ? "rgba(142, 223, 215, 0.16)"
       : repelActive
-        ? "rgba(164, 122, 236, 0.16)"
+        ? "rgba(244, 154, 82, 0.18)"
         : "rgba(167, 147, 221, 0.08)";
     const crossStroke = attractActive
       ? "rgba(216, 247, 255, 0.18)"

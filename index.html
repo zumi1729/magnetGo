@@ -5,28 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>magnetGO</title>
     <link rel="stylesheet" href="./styles.css" />
-    <style>
-      .player-stage-meta {
-        position: absolute;
-        top: 200px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 2;
-        text-align: center;
-        pointer-events: none;
-      }
-
-      .player-stage-meta .eyebrow {
-        margin: 0 0 2px;
-        font-size: 22px;
-        letter-spacing: 0.16em;
-      }
-
-      .player-stage-meta h2 {
-        margin: 0;
-        font-size: 40px;
-      }
-    </style>
+    <link rel="stylesheet" href="./play-theme.css" />
   </head>
   <body>
     <main id="appLayout" class="layout">
@@ -42,15 +21,20 @@
           </div>
         </div>
         <div class="game-shell">
-          <div id="playSideActions" class="play-side-actions" aria-hidden="true">
-            <a class="reset-button player-link guide-button" href="./tutorial.html">遊び方</a>
-            <button id="playResetButton" class="reset-button" type="button">RESET</button>
-          </div>
-          <div class="game-canvas-wrap">
+          <div class="play-toolbar">
+            <a class="play-brand player-only" href="./index.html?mode=play" aria-label="magnetGO">
+              magnet<span>GO</span>
+            </a>
             <div class="player-stage-meta player-only">
               <p id="playerStageIndex" class="eyebrow"></p>
               <h2 id="playerStageTitle"></h2>
             </div>
+            <div id="playSideActions" class="play-side-actions" aria-hidden="true">
+              <a class="reset-button player-link guide-button" href="./tutorial.html">？ 遊び方</a>
+              <button id="playResetButton" class="reset-button" type="button">↻ RESET</button>
+            </div>
+          </div>
+          <div class="game-canvas-wrap">
             <canvas id="gameCanvas" width="1408" height="1408" aria-label="magnetGO game"></canvas>
             <div id="clearOverlay" class="clear-overlay" aria-hidden="true">
               <div class="clear-card">
@@ -70,13 +54,21 @@
           </div>
         </div>
         <div class="player-info player-only">
+          <section class="player-info-block player-mission">
+            <div class="player-mission-icon" aria-hidden="true">USB</div>
+            <div>
+              <p class="eyebrow">今回のミッション</p>
+              <h2>USBを頭に届けて、出口へ！</h2>
+              <p>頭を置く場所を考えて、磁力で箱を動かそう。</p>
+            </div>
+          </section>
           <section class="player-info-block">
-            <p class="eyebrow">Controls</p>
+            <p class="eyebrow">操作キー</p>
             <ul class="player-controls">
-              <li><span>Move</span><strong>Arrow Keys / WASD</strong></li>
-              <li><span>Drop / Pick Head</span><strong>Space</strong></li>
-              <li><span>Attract</span><strong>Q</strong></li>
-              <li><span>Repel</span><strong>E</strong></li>
+              <li><strong>WASD</strong><span>移動</span></li>
+              <li><strong>SPACE</strong><span>頭を置く・拾う</span></li>
+              <li class="control-attract"><strong>Q</strong><span>引き寄せる</span></li>
+              <li class="control-repel"><strong>E</strong><span>押し出す</span></li>
             </ul>
           </section>
         </div>
