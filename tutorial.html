@@ -9,6 +9,7 @@
     />
     <title>遊び方 | magnetGO</title>
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./tutorial.css" />
   </head>
   <body class="tutorial-page">
     <header class="tutorial-header">
@@ -21,11 +22,11 @@
     <main class="tutorial-main">
       <section class="tutorial-hero" aria-labelledby="tutorial-heading">
         <div class="tutorial-hero-copy">
-          <p class="tutorial-kicker">How to play</p>
-          <h1 id="tutorial-heading">頭を置いて、<br /><em>磁力で道を作る。</em></h1>
+          <p class="tutorial-kicker">はじめての magnetGO</p>
+          <h1 id="tutorial-heading">あたまを置いて、<br /><em>ひらめこう！</em></h1>
           <p class="tutorial-lead">
-            頭を取り外せる小さなロボの2Dパズルゲーム。<br />
-            置いた頭から磁力を出して、金属箱を動かそう。
+            ちいさなロボの頭は、ふしぎな磁石。<br />
+            頭を置く場所を考えて、箱を動かし、USBを取り戻そう！
           </p>
           <div class="tutorial-hero-actions">
             <a class="tutorial-primary-button" href="./index.html?mode=play">今すぐプレイ</a>
@@ -34,19 +35,22 @@
         </div>
 
         <div class="tutorial-hero-visual" aria-label="ロボの頭と本体を離して使うゲームです">
+          <span class="tutorial-spark tutorial-spark-one" aria-hidden="true">✦</span>
+          <span class="tutorial-spark tutorial-spark-two" aria-hidden="true">●</span>
+          <span class="tutorial-spark tutorial-spark-three" aria-hidden="true">✦</span>
           <div class="tutorial-orbit tutorial-orbit-one"></div>
           <div class="tutorial-orbit tutorial-orbit-two"></div>
           <img class="tutorial-hero-head" src="./assets/robot-head2.PNG" alt="取り外したロボの頭" />
           <img class="tutorial-hero-body" src="./assets/robot-body3.PNG" alt="頭を外したロボの本体" />
-          <span class="tutorial-magnet-label">MAGNET<br />SOURCE</span>
+          <span class="tutorial-magnet-label">ここから<br />磁力が出るよ！</span>
         </div>
       </section>
 
       <section class="tutorial-quick-start" aria-labelledby="quick-start-heading">
         <div class="tutorial-quick-title">
-          <p class="tutorial-kicker">Quick start</p>
-          <h2 id="quick-start-heading">これだけ覚えれば遊べます</h2>
-          <p>頭を置く場所がポイント。磁力はロボ本体ではなく、置いた頭を中心に発生します。</p>
+          <p class="tutorial-kicker">まずはこれだけ！</p>
+          <h2 id="quick-start-heading">3つのコツで冒険スタート</h2>
+          <p>いちばん大事なのは、頭を置く場所。磁力はロボ本体ではなく、置いた頭から出ます。</p>
         </div>
 
         <div class="tutorial-quick-keys" aria-label="操作キー一覧">
@@ -57,54 +61,35 @@
         </div>
 
         <ol class="tutorial-quick-flow">
-          <li><strong>1</strong><span>頭を置く</span></li>
-          <li><strong>2</strong><span><kbd>Q</kbd> / <kbd>E</kbd> で箱を動かす</span></li>
-          <li><strong>3</strong><span>USBを頭に届けて出口へ</span></li>
+          <li>
+            <strong>1</strong>
+            <img src="./assets/robot-head2.PNG" alt="ロボの頭" />
+            <span><b>頭を置く</b><small><kbd>SPACE</kbd> で取り外そう</small></span>
+          </li>
+          <li>
+            <strong>2</strong>
+            <img src="./assets/block2.PNG" alt="金属箱" />
+            <span><b>箱を動かす</b><small><kbd>Q</kbd> で引く・<kbd>E</kbd> で押す</small></span>
+          </li>
+          <li>
+            <strong>3</strong>
+            <img src="./assets/usb.PNG" alt="USB" />
+            <span><b>USBを届ける</b><small>頭に挿して出口へ！</small></span>
+          </li>
         </ol>
       </section>
 
-      <section id="basics" class="tutorial-section" aria-labelledby="basics-heading">
-        <div class="tutorial-section-heading">
-          <p class="tutorial-step-number">01</p>
-          <div>
-            <p class="tutorial-kicker">Basic controls</p>
-            <h2 id="basics-heading">まずは、動かしてみる</h2>
-          </div>
-        </div>
-
-        <div class="tutorial-control-grid">
-          <article class="tutorial-control-card">
-            <div class="tutorial-key-cluster" aria-hidden="true">
-              <span></span><kbd>W</kbd><span></span>
-              <kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
-            </div>
-            <div>
-              <h3>移動する</h3>
-              <p><kbd>WASD</kbd> または矢印キーで移動。上キーでジャンプします。</p>
-            </div>
-          </article>
-
-          <article class="tutorial-control-card">
-            <div class="tutorial-space-key" aria-hidden="true"><kbd>SPACE</kbd></div>
-            <div>
-              <h3>頭を置く・拾う</h3>
-              <p><kbd>Space</kbd> で頭をその場に置きます。頭に近づいてもう一度押すと回収できます。</p>
-            </div>
-          </article>
-        </div>
-      </section>
-
-      <section class="tutorial-section tutorial-magnet-section" aria-labelledby="magnet-heading">
+      <section id="basics" class="tutorial-section" aria-labelledby="magnet-heading">
         <div class="tutorial-section-heading">
           <p class="tutorial-step-number">02</p>
           <div>
-            <p class="tutorial-kicker">Core mechanic</p>
-            <h2 id="magnet-heading">磁力は「頭」から発生する</h2>
+            <p class="tutorial-kicker">磁力を使ってみよう</p>
+            <h2 id="magnet-heading">引っぱる？ 押し出す？</h2>
           </div>
         </div>
 
         <p class="tutorial-section-intro">
-          頭を置いた場所が磁力の中心です。本体が離れても、箱は頭に向かって引かれ、頭から外へ押されます。
+          頭を置いた場所が磁力の中心。本体が離れても、箱は頭を目印に動きます。
         </p>
 
         <div class="tutorial-magnet-grid">
@@ -117,9 +102,9 @@
             <div class="tutorial-magnet-copy">
               <kbd>Q</kbd>
               <div>
-                <p class="tutorial-kicker">Attract</p>
-                <h3>引き寄せる</h3>
-                <p>金属箱を頭の方向へ動かします。</p>
+                <p class="tutorial-kicker">ぎゅーっ</p>
+                <h3>頭へ引き寄せる</h3>
+                <p><kbd>Q</kbd> を押している間、箱が頭へ近づきます。</p>
               </div>
             </div>
           </article>
@@ -133,17 +118,17 @@
             <div class="tutorial-magnet-copy">
               <kbd>E</kbd>
               <div>
-                <p class="tutorial-kicker">Repel</p>
-                <h3>押し出す</h3>
-                <p>金属箱を頭から遠ざけます。</p>
+                <p class="tutorial-kicker">ぽーん！</p>
+                <h3>頭から押し出す</h3>
+                <p><kbd>E</kbd> を押している間、箱が頭から離れます。</p>
               </div>
             </div>
           </article>
         </div>
 
         <aside class="tutorial-tip">
-          <strong>POINT</strong>
-          <p><kbd>Q</kbd> と <kbd>E</kbd> は押し続けて使います。箱との間に壁があると磁力は届きません。</p>
+          <strong>ヒント！</strong>
+          <p>頭と箱の間に壁があると磁力は届きません。頭を置く場所を変えてみよう。</p>
         </aside>
       </section>
 
@@ -151,8 +136,8 @@
         <div class="tutorial-section-heading">
           <p class="tutorial-step-number">03</p>
           <div>
-            <p class="tutorial-kicker">Mission</p>
-            <h2 id="goal-heading">USBを取り戻して、出口へ</h2>
+            <p class="tutorial-kicker">ゴールまであと少し</p>
+            <h2 id="goal-heading">USBを頭に届けよう！</h2>
           </div>
         </div>
 
